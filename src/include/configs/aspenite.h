@@ -282,15 +282,15 @@ CHUMBY_LENGTH_ubfb 0x00000200
     "snow draw ;"                                               \
     " ;"                                                        \
     /* Set up the Linux command line */                         \
-    "setenv bootargs root=/dev/${PART} rootfstype=ext3 "        \
+    "setenv bootargs root=/dev/${PART} "                        \
             "rootwait console=ttyS0,115200 mem=128M "           \
-            "uart_dma init=/linuxrc sysrq_always_enabled "      \
+            "uart_dma sysrq_always_enabled "                    \
             "brandnum=${brandnum} "                             \
-            "ro logo.brand=${brand} ${RECOVERY} ;"              \
+            "rw logo.brand=${brand} ${RECOVERY} ;"              \
     "echo \"Booting to ${PARTNAME}...\" ;"                      \
     " ;"                                                        \
     /* Load the kernel from the config area */                  \
-    "ext2load mmc 0:${KF} ${default_load_addr} /boot/vmlinuz && cconfigload mmc 0 ${default_load_addr} ${KB};"\
+    "ext2load mmc 0:${KF} ${default_load_addr} /boot/zImage && cconfigload mmc 0 ${default_load_addr} ${KB};"\
     "bootz ${default_load_addr} ;"                              \
     ""
     //"cconfigload mmc 0 ${default_load_addr} ${KERN} ;"
