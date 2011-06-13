@@ -244,8 +244,16 @@ CHUMBY_LENGTH_ubfb 0x00000200
     "echo \"Drawing something to the screen...\" ;"             \
     "snow init ${BP} ;"                                         \
     " ;"                                                        \
-    /* Ignore touchscreen for now */                            \
-    "TS=0 ;"                                                    \
+    /* Determine if someone is touching the screen */           \
+    "echo \"Testing the touchscreen...\" ;"                     \
+    "TS=0 ; touchscreen || TS=1 ;"                              \
+    "if test ${TS} = 0 ;"                                       \
+    "    then snow load ${KF} /boot/logo_${brand}.gz ;"         \
+    "    else snow load ${KF} /boot/recovery_1_${brand}.gz ;"   \
+    "fi ;"                                                      \
+    "snow draw ;"                                               \
+    /*"snow start ;"*/                                          \
+    " ;"                                                        \
     " ;"                                                        \
     /* Wait for the user to press Control-C */                  \
     "echo \"Press Control-C to enter a shell.\" ;"              \
@@ -253,6 +261,10 @@ CHUMBY_LENGTH_ubfb 0x00000200
     "    then echo \"Continuing boot...\" ;"                    \
     "    else echo \"Chumby shell\"; echo \"Type 'run bootcmd' to exit\"; exit ;" \
     "fi ;"                                                      \
+    " ;"                                                        \
+    /* See if the user is still touching the screen */          \
+    "echo \"Testing the touchscreen again...\" ;"               \
+    "test ${TS} = 1 && TS=0 && touchscreen || TS=1 ;"           \
     " ;"                                                        \
     /* If the user is pressing the screen, swap partitions */   \
     "if test ${TS} = 1 ;"                                       \

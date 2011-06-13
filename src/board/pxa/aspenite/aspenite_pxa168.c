@@ -462,17 +462,6 @@ int board_init (void)
 	*(unsigned int *)0xd4019154 =  (1 << (109-96));
 #endif
 
-
-#if defined(CHUMBY_CONFIG_platform)
-	/* Disable USB card.  Will be re-enabled by kernel */
-	{
-		/* GPIO4_PCR: Clear GPIO 101 and set it low */
-		*(unsigned int *)0xd4019124 = 0x20;
-		/* GPIO4_PDR: Set GPIO 101 to be an output */
-		*(unsigned int *)0xd401910c |= 0x20;
-	}
-#endif
-
 #if DDR_HACK
     printf( "updating DDR config (again)...\n" );
     update_dramconfig_boot(); // really force the NTIM settings in
