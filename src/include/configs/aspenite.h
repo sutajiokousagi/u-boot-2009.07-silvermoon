@@ -55,6 +55,12 @@
 //#define CONFIG_CONSOLE_MUX // Output data to serial console and LCD.
 #define CONFIG_USE_IRQ
 
+// add support for FPGA
+#define CONFIG_CMD_FPGA
+#define CONFIG_FPGA_XILINX
+#define CONFIG_FPGA
+#define CONFIG_FPGA_SPARTAN6
+#define CONFIG_FPGA_COUNT  1
 
 // Enable support for useful filesystems.
 //#define CONFIG_CMD_FAT
@@ -247,6 +253,9 @@ CHUMBY_LENGTH_ubfb 0x00000200
     /* Ignore touchscreen for now */                            \
     "TS=0 ;"                                                    \
     " ;"                                                        \
+    "echo \"Loading FPGA configuration.\" ;"                    \
+    "ext2load mmc 0:2 ${default_load_addr} /lib/firmware/hdmi_720p.bin ;" \
+    "fpga load 0 ${default_load_addr} 340604 ; "                \
     /* Wait for the user to press Control-C */                  \
     "echo \"Press Control-C to enter a shell.\" ;"              \
     "if sleep 2 ;"                                              \

@@ -23,6 +23,8 @@
 #include <asm/arch/mfp.h>
 #include <asm/arch/mfp-pxa168.h>
 
+#include <spartan6.h>
+
 #define PXA168_LCD_BASE 0xD420B000
 #define LCD_CFG_GRA_START_ADDR0 0xF4
 #define LCD_SPU_DMA_CTRL0 0x190
@@ -39,6 +41,33 @@ extern void BBU_TPO_INIT();
 extern void BBU_I2C_Init();
 extern void BBU_Timer_init();
 extern int reconfigure_plls(void);
+
+/* ------------------------------------------------------------------------- */
+extern int fpga_pgm_fn( int assert_pgm, int flush, int cookie );
+extern int fpga_init_fn( int cookie );
+extern int fpga_done_fn( int cookie );
+extern int fpga_clk_fn( int assert_clk, int flush, int cookie );
+extern int fpga_wr_fn( int assert_write, int flush, int cookie );
+extern int fpga_pre_config_fn( int cookie );
+extern int fpga_post_config_fn( int cookie );
+
+Xilinx_Spartan6_Slave_Serial_fns silvermoon_fpga_fns = {
+	fpga_pre_config_fn,
+	fpga_pgm_fn,
+	fpga_clk_fn,
+	fpga_init_fn,
+	fpga_done_fn,
+	fpga_wr_fn,
+	fpga_post_config_fn,
+};
+
+Xilinx_desc fpga[CONFIG_FPGA_COUNT] = {
+	XILINX_XC6SLX9_DESC(
+		slave_serial_ssp,
+		(void *)&silvermoon_fpga_fns,
+		0)
+};
+/* ------------------------------------------------------------------------- */
 
 static mfp_cfg_t aspenite_mfp_cfg[] __initdata = {
 	MFP_CFG(GPIO109, AF0),
@@ -104,6 +133,156 @@ static struct pxa3xx_mfp_addr_map pxa910_168_mfp_addr_map[] __initdata = {
 
 	MFP_ADDR_END,
 };
+
+/*---------------------------------------------------------------*/
+// GPIO designations:
+// 118 - FPGA_CCLK  output
+// 119 - RESET_N    output
+// 120 - INIT_N     output
+// 121 - DIN        output
+// 97  - DONE       input
+
+#define FPGA_SM_MFP_118 *((volatile unsigned int *)0xd401e1d8)
+#define FPGA_SM_MFP_119 *((volatile unsigned int *)0xd401e1dc)
+#define FPGA_SM_MFP_120 *((volatile unsigned int *)0xd401e1e0)
+#define FPGA_SM_MFP_121 *((volatile unsigned int *)0xd401e1e4)
+#define FPGA_SM_MFP_97  *((volatile unsigned int *)0xd401e184)
+#define FPGA_SM_MFP_96  *((volatile unsigned int *)0xd401e180)
+
+// bits 122-96
+#define FPGA_SM_GP_96_MSK  (0x1)
+#define FPGA_SM_GP_97_MSK  (0x2)
+#define FPGA_SM_GP_118_MSK (0x00400000)
+#define FPGA_SM_GP_119_MSK (0x00800000)
+#define FPGA_SM_GP_120_MSK (0x01000000)
+#define FPGA_SM_GP_121_MSK (0x02000000)
+
+#define FPGA_SM_LED_MSK    FPGA_SM_GP_96_MSK
+#define FPGA_SM_CCLK_MSK   FPGA_SM_GP_118_MSK
+#define FPGA_SM_RESET_N_MSK FPGA_SM_GP_119_MSK
+#define FPGA_SM_INIT_N_MSK FPGA_SM_GP_120_MSK
+#define FPGA_SM_DIN_MSK    FPGA_SM_GP_121_MSK
+#define FPGA_SM_DONE_MSK   FPGA_SM_GP_97_MSK
+
+// we neatly fit within a port config register, so drop the suffix and just
+// make our own macro specific to the port
+#define FPGA_SM_GPIO_GPDR *((volatile unsigned int *)0xd401910c)
+
+#define FPGA_SM_GPIO_GPSR *((volatile unsigned int *)0xd4019118)
+#define FPGA_SM_GPIO_GPCR *((volatile unsigned int *)0xd4019124)
+#define FPGA_SM_GPIO_GPLR *((volatile unsigned int *)0xd4019100)
+
+
+/*
+ * Set the FPGA's active-low SelectMap program line to the specified level
+ */
+int fpga_pgm_fn(int assert, int flush, int cookie)
+{
+  printf("%s:%d: FPGA PROGRAM ",
+	__FUNCTION__, __LINE__);
+  
+  if (assert) {
+    FPGA_SM_GPIO_GPCR = FPGA_SM_RESET_N_MSK;
+    printf("asserted\n");
+  } else {
+    FPGA_SM_GPIO_GPSR = FPGA_SM_RESET_N_MSK;
+    printf("deasserted\n");
+  }
+  return assert;
+}
+
+
+/*
+ * Test the state of the active-low FPGA INIT line.  Return 1 on INIT
+ * asserted (low).
+ */
+int fpga_init_fn(int cookie)
+{
+  if ( FPGA_SM_GPIO_GPLR & FPGA_SM_INIT_N_MSK )
+    return 0;
+  else
+    return 1;
+}
+
+/*
+ * Test the state of the active-high FPGA DONE pin
+ */
+int fpga_done_fn(int cookie)
+{
+  if ( FPGA_SM_GPIO_GPLR & FPGA_SM_DONE_MSK )
+    return 1;
+  else
+    return 0;
+}
+
+/*
+ * FPGA pre-configuration function. Just make sure that
+ * FPGA reset is asserted to keep the FPGA from starting up after
+ * configuration.
+ */
+int fpga_pre_config_fn(int cookie)
+{
+	printf("%s:%d: FPGA pre-configuration\n", __FUNCTION__, __LINE__);
+
+	// pre-config only valid for bit-bang. SSP pre-config is hard-coded.
+	// we'll set up all our GPIOs here
+	//	printf( "fpga: setting up MFPs\n" );
+	FPGA_SM_MFP_118 &= ~0x7;
+	FPGA_SM_MFP_119 &= ~0x7;
+	FPGA_SM_MFP_120 &= ~0x7;
+	FPGA_SM_MFP_121 &= ~0x7;
+	FPGA_SM_MFP_97 &= ~0x7;
+
+	//	printf( "fpga: setting up GPIOs\n" );
+	// set inputs
+	FPGA_SM_GPIO_GPDR = FPGA_SM_GPIO_GPDR & ~FPGA_SM_DONE_MSK;
+	FPGA_SM_GPIO_GPDR = FPGA_SM_GPIO_GPDR & ~FPGA_SM_INIT_N_MSK;
+	// set outputs
+	FPGA_SM_GPIO_GPDR |= (FPGA_SM_DIN_MSK | FPGA_SM_RESET_N_MSK | FPGA_SM_CCLK_MSK);
+	
+	//	printf( "fpga: initing GPIOs\n" );
+	// set all the outputs to 0
+	FPGA_SM_GPIO_GPCR = (FPGA_SM_CCLK_MSK | FPGA_SM_RESET_N_MSK | FPGA_SM_DIN_MSK);
+	// so fpga is now in reset, we exit
+	return 0;
+}
+
+
+/*
+ * FPGA post configuration function. Blip the FPGA reset line and then see if
+ * the FPGA appears to be running.
+ */
+int fpga_post_config_fn(int cookie)
+{
+
+	printf("%s:%d: FPGA post configuration\n", __FUNCTION__, __LINE__);
+	// nothin man, we are all cool.
+	return 0;
+}
+
+
+int fpga_clk_fn(int assert_clk, int flush, int cookie)
+{
+	if (assert_clk)
+	  FPGA_SM_GPIO_GPSR = FPGA_SM_CCLK_MSK;
+	else
+	  FPGA_SM_GPIO_GPCR = FPGA_SM_CCLK_MSK;
+
+	return assert_clk;
+}
+
+
+int fpga_wr_fn(int assert_write, int flush, int cookie)
+{
+	if (assert_write)
+	  FPGA_SM_GPIO_GPSR = FPGA_SM_DIN_MSK;
+	else
+	  FPGA_SM_GPIO_GPCR = FPGA_SM_DIN_MSK;
+
+	return assert_write;
+}
+/*---------------------------------------------------------------*/
+
 
 void
 dummy_delay(unsigned  int delay)
@@ -324,6 +503,7 @@ void update_dramconfig_boot() {
 
 }
 
+
 // Variables initialized by board_init for later informational display
 static int _aspen_a0_detected = -1;
 static unsigned int _mohawk_cpu_conf_before = 0;
@@ -480,6 +660,17 @@ int board_init (void)
     for( i = 0; i < 100; i++ ) {
       print_dramconfig_boot(0);  // read the registers a lot to try and stabilize the settings (some silicon bug...)
     }
+
+#if defined(CONFIG_FPGA)
+    printf("%s:%d: Initialize FPGA interface (relocation offset = 0x%.8lx)\n",
+	  __FUNCTION__, __LINE__, gd->reloc_off);
+    fpga_init(gd->reloc_off);
+
+    // fpga_serialslave_init (); // probably should migrate stuff from spartan6 to here...
+    printf("%s:%d: Adding fpga 0\n", __FUNCTION__, __LINE__);
+    fpga_add (fpga_xilinx, &fpga[0]);
+#endif    
+
     printf( "done.\n" );
 #endif
 

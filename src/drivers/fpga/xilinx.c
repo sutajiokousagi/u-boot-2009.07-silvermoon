@@ -31,6 +31,7 @@
 #include <virtex2.h>
 #include <spartan2.h>
 #include <spartan3.h>
+#include <spartan6.h>
 
 #if 0
 #define FPGA_DEBUG
@@ -87,6 +88,17 @@ int xilinx_load (Xilinx_desc * desc, void *buf, size_t bsize)
 #endif
 			break;
 
+		case Xilinx_Spartan6:
+#if defined(CONFIG_FPGA_SPARTAN6)
+			PRINTF ("%s: Launching the Spartan-6 Loader...\n",
+					__FUNCTION__);
+			ret_val = Spartan6_load (desc, buf, bsize);
+#else
+			printf ("%s: No support for Spartan-6 devices.\n",
+					__FUNCTION__);
+#endif
+			break;
+
 		default:
 			printf ("%s: Unsupported family type, %d\n",
 					__FUNCTION__, desc->family);
@@ -134,6 +146,17 @@ int xilinx_dump (Xilinx_desc * desc, void *buf, size_t bsize)
 #endif
 			break;
 
+		case Xilinx_Spartan6:
+#if defined(CONFIG_FPGA_SPARTAN6)
+			PRINTF ("%s: Launching the Spartan-6 Reader...\n",
+					__FUNCTION__);
+			ret_val = Spartan6_dump (desc, buf, bsize);
+#else
+			printf ("%s: No support for Spartan-6 devices.\n",
+					__FUNCTION__);
+#endif
+			break;
+
 		default:
 			printf ("%s: Unsupported family type, %d\n",
 					__FUNCTION__, desc->family);
@@ -158,6 +181,9 @@ int xilinx_info (Xilinx_desc * desc)
 		case Xilinx_Virtex2:
 			printf ("Virtex-II\n");
 			break;
+		case Xilinx_Spartan6:
+			printf ("Spartan-6\n");
+			break;
 			/* Add new family types here */
 		default:
 			printf ("Unknown family type, %d\n", desc->family);
@@ -180,6 +206,9 @@ int xilinx_info (Xilinx_desc * desc)
 		case slave_selectmap:
 			printf ("Slave SelectMap Mode\n");
 			break;
+		case slave_serial_ssp:
+		  printf( "Slave Serial via SSP\n" );
+		  break;
 		case master_selectmap:
 			printf ("Master SelectMap Mode\n");
 			break;
@@ -219,6 +248,16 @@ int xilinx_info (Xilinx_desc * desc)
 #else
 				/* just in case */
 				printf ("%s: No support for Virtex-II devices.\n",
+						__FUNCTION__);
+#endif
+				break;
+
+			case Xilinx_Spartan6:
+#if defined(CONFIG_FPGA_SPARTAN6)
+				Spartan6_info (desc);
+#else
+				/* just in case */
+				printf ("%s: No support for Spartan-6 devices.\n",
 						__FUNCTION__);
 #endif
 				break;
@@ -267,6 +306,15 @@ int xilinx_reloc (Xilinx_desc * desc, ulong reloc_offset)
 			ret_val = Virtex2_reloc (desc, reloc_offset);
 #else
 			printf ("%s: No support for Virtex-II devices.\n",
+					__FUNCTION__);
+#endif
+			break;
+
+		case Xilinx_Spartan6:
+#if defined(CONFIG_FPGA_SPARTAN6)
+			ret_val = Spartan6_reloc (desc, reloc_offset);
+#else
+			printf ("%s: No support for Spartan-6 devices.\n",
 					__FUNCTION__);
 #endif
 			break;

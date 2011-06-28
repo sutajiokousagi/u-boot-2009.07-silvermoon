@@ -31,8 +31,8 @@
 
 
 #define MAX_FLAKES    2048
-#define SCREEN_WIDTH  800
-#define SCREEN_HEIGHT 600
+#define SCREEN_WIDTH  1280
+#define SCREEN_HEIGHT 720
 #define RAND_SIZE 32768
     
 static int rand_num[RAND_SIZE];

@@ -59,6 +59,7 @@ typedef enum {			/* typedef Xilinx_iface */
 	jtag_mode,		/* jtag/tap serial (not used ) */
 	master_selectmap,	/* master SelectMap (virtex2)           */
 	slave_selectmap,	/* slave SelectMap (virtex2)            */
+	slave_serial_ssp,       /* slave serial via SSP (platform-specific silvermoon, spartan6) */
 	max_xilinx_iface_type	/* insert all new types before this */
 } Xilinx_iface;			/* end, typedef Xilinx_iface */
 
@@ -68,6 +69,7 @@ typedef enum {			/* typedef Xilinx_Family */
 	Xilinx_VirtexE,		/* Virtex-E Family */
 	Xilinx_Virtex2,		/* Virtex2 Family */
 	Xilinx_Spartan3,	/* Spartan-III Family */
+	Xilinx_Spartan6,        /* Spartan-6 family */
 	max_xilinx_type		/* insert all new types before this */
 } Xilinx_Family;		/* end, typedef Xilinx_Family */
 

@@ -176,7 +176,7 @@ int do_fpga (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 
 	switch (argc) {
 	case 5:		/* fpga <op> <dev> <data> <datasize> */
-		data_size = simple_strtoul (argv[4], NULL, 16);
+		data_size = simple_strtoul (argv[4], NULL, 10);
 
 	case 4:		/* fpga <op> <dev> <data> */
 #if defined(CONFIG_FIT)
@@ -246,7 +246,7 @@ int do_fpga (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 	case FPGA_LOADB:
 		rc = fpga_loadbitstream(dev, fpga_data, data_size);
 		break;
-
+#if 0
 	case FPGA_LOADMK:
 		switch (genimg_get_format (fpga_data)) {
 		case IMAGE_FORMAT_LEGACY:
@@ -305,6 +305,7 @@ int do_fpga (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 			break;
 		}
 		break;
+#endif
 
 	case FPGA_DUMP:
 		rc = fpga_dump (dev, fpga_data, data_size);
@@ -351,12 +352,12 @@ static int fpga_get_op (char *opstr)
 
 U_BOOT_CMD (fpga, 6, 1, do_fpga,
 	    "fpga    - loadable FPGA image support\n",
-	    "fpga [operation type] [device number] [image address] [image size]\n"
+	    "fpga [operation type] [device number] [image address (hex)] [image size (decimal)]\n"
 	    "fpga operations:\n"
 	    "\tinfo\tlist known device information\n"
 	    "\tload\tLoad device from memory buffer\n"
 	    "\tloadb\tLoad device from bitstream buffer (Xilinx devices only)\n"
-	    "\tloadmk\tLoad device generated with mkimage\n"
+	    //	    "\tloadmk\tLoad device generated with mkimage\n"
 	    "\tdump\tLoad device to memory buffer\n"
 #if defined(CONFIG_FIT)
 	    "\tFor loadmk operating on FIT format uImage address must include\n"
