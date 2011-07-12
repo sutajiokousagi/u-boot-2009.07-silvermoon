@@ -168,6 +168,7 @@ COBJS-y += kgdb.o
 endif
 COBJS-$(CONFIG_LCD) += lcd.o
 COBJS-$(CONFIG_LCD) += cmd_snow.o
+COBJS-$(CONFIG_CMD_IR) += cmd_ir.o
 COBJS-$(CONFIG_LYNXKDI) += lynxkdi.o
 COBJS-$(CONFIG_UPDATE_TFTP) += update.o
 COBJS-$(CONFIG_USB_KEYBOARD) += usb_kbd.o

@@ -34,6 +34,7 @@
 // Enable various nice commands.
 #define CONFIG_CMD_MISC
 #define CONFIG_CMD_ECHO
+#define CONFIG_CMD_IR
 #define CONFIG_CMD_RUN
 #define CONFIG_CMD_IMI
 //#define CONFIG_CMD_ELF
@@ -54,6 +55,7 @@
 #define CONFIG_SYS_VIDEO_LOGO_MAX_SIZE (2<<20)
 //#define CONFIG_CONSOLE_MUX // Output data to serial console and LCD.
 #define CONFIG_USE_IRQ
+#define CONFIG_USE_FIQ
 
 // add support for FPGA
 #define CONFIG_CMD_FPGA
@@ -232,15 +234,8 @@ CHUMBY_LENGTH_ubfb 0x00000200
     /* Init SD card */                                          \
     "mmc rescan 0 ;"                                            \
     " ;"                                                        \
-    /* Figure out which partition is Active */                  \
-    "echo \"Determining boot partition...\" ;"                  \
-    "BP=0 ; cconfiginfo mmc 0 active || BP=1 ;"                 \
-    " ;"                                                        \
     /* Test to see which Boot Partition is active */            \
-    "if test ${BP} = 0 ;"                                       \
-    "    then PART=mmcblk0p2; PARTNAME=rfsA; KF=2; KB=krnA; "   \
-    "    else PART=mmcblk0p3; PARTNAME=rfsB; KF=3; KB=krnB; "   \
-    "fi ;"                                                      \
+    "PART=mmcblk0p2; PARTNAME=rfsA; KF=2; KB=krnA; "            \
     " ;"                                                        \
     /* Check for debranding */                                  \
     "cbrand ; "                                                 \
@@ -250,12 +245,14 @@ CHUMBY_LENGTH_ubfb 0x00000200
     "echo \"Drawing something to the screen...\" ;"             \
     "snow init ${BP} ;"                                         \
     " ;"                                                        \
-    /* Ignore touchscreen for now */                            \
-    "TS=0 ;"                                                    \
-    " ;"                                                        \
     "echo \"Loading FPGA configuration.\" ;"                    \
     "ext2load mmc 0:2 ${default_load_addr} /lib/firmware/hdmi_720p.bin ;" \
     "fpga load 0 ${default_load_addr} 340604 ; "                \
+    " ;"                                                        \
+    "echo \"Loading boot logo.\" ;"                             \
+    "ext2load mmc 0:2 ${default_load_addr} /boot/logo.raw.gz ;" \
+    "unzip ${default_load_addr} ${lcdbase} ;"                   \
+    " ;"                                                        \
     /* Wait for the user to press Control-C */                  \
     "echo \"Press Control-C to enter a shell.\" ;"              \
     "if sleep 2 ;"                                              \
@@ -264,19 +261,7 @@ CHUMBY_LENGTH_ubfb 0x00000200
     "fi ;"                                                      \
     " ;"                                                        \
     /* If the user is pressing the screen, swap partitions */   \
-    "if test ${TS} = 1 ;"                                       \
-    "    then echo \"Booting to recovery shell...\" ;"          \
-    "    RECOVERY=\"recovery=1 logo.recovery=1\";"              \
-    "    if test ${BP} = 0 ;"                                   \
-    "        then PART=mmcblk0p3; PARTNAME=rfsB; KF=3; KB=krnB; "   \
-    "        else PART=mmcblk0p2; PARTNAME=rfsA; KF=2; KB=krnA; "   \
-    "    fi ;"                                                  \
-    "    snow load ${KF} /boot/recovery_2_${brand}.gz ;"        \
-    "else "                                                     \
-    "    echo \"Booting to regular shell...\" ;"                \
-    "    snow load ${KF} /boot/loading_${brand}.gz ;"           \
-    "fi ;"                                                      \
-    "snow draw ;"                                               \
+    "echo \"Booting to regular shell...\" ;"                \
     " ;"                                                        \
     /* Set up the Linux command line */                         \
     "setenv bootargs root=/dev/${PART} "                        \

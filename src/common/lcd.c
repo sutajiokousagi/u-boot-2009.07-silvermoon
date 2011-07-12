@@ -434,8 +434,15 @@ U_BOOT_CMD(
 
 static int lcd_init (void *lcdbase)
 {
+	long lcdbase_int;
+	static char tmp[128];
+
 	/* Initialize the lcd controller */
 	debug ("[LCD] Initializing LCD frambuffer at %p\n", lcdbase);
+
+	memset(tmp, 0, sizeof(tmp));
+	sprintf(tmp, "%p", lcdbase);
+	setenv("lcdbase", tmp);
 
 	lcd_ctrl_init (lcdbase);
 	lcd_is_enabled = 1;

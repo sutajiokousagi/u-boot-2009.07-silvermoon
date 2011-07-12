@@ -35,7 +35,7 @@ int lcd_color_bg;
 void *lcd_base;				/* Start of framebuffer memory	*/
 void *lcd_console_address;		/* Start of console buffer	*/
 
-vidinfo_t panel_info = { 800, 600, LCD_COLOR16 };
+vidinfo_t panel_info = { 1280, 720, LCD_COLOR16 };
 
 short console_col;
 short console_row;
@@ -73,106 +73,65 @@ struct register_values {
 void lcd_ctrl_init(void *lcdbase) {
     unsigned int i;
     struct register_values register_values[] = {
-        {(unsigned long *)0xd420b0c0, (unsigned long)lcdbase},
-        {(unsigned long *)0xd420b0c4, (unsigned long)lcdbase},
-        {(unsigned long *)0xd420b0c8, (unsigned long)lcdbase},
-        {(unsigned long *)0xd420b0f4, (unsigned long)lcdbase},
-        {(unsigned long *)0xd420b0f8, (unsigned long)lcdbase},
-		/*
-        {(unsigned long *)0xd420b0cc, 0x00000000},
-        {(unsigned long *)0xd420b0d0, 0x00000000},
-        {(unsigned long *)0xd420b0d4, 0x00000000},
-        {(unsigned long *)0xd420b0d8, 0x00000000},
-        {(unsigned long *)0xd420b0dc, 0x00000000},
-		*/
-        {(unsigned long *)0xd420b0e0, 0x00000640},
-		/*
-        {(unsigned long *)0xd420b0e4, 0x00000000},
-        {(unsigned long *)0xd420b0e8, 0x00000000},
-		*/
-        {(unsigned long *)0xd420b0ec, 0x02580320},
-        {(unsigned long *)0xd420b0f0, 0x02580320},
-        {(unsigned long *)0xd420b0fc, 0x00000640},
-        //{(unsigned long *)0xd420b100, 0x00000000},
-        {(unsigned long *)0xd420b104, 0x02580320},
-        {(unsigned long *)0xd420b108, 0x02580320},
-		/*
-        {(unsigned long *)0xd420b10c, 0x00000000},
-        {(unsigned long *)0xd420b110, 0x00000000},
-		*/
-        {(unsigned long *)0xd420b114, 0x028c049f},
-        {(unsigned long *)0xd420b118, 0x02580320},
-        {(unsigned long *)0xd420b11c, 0x00d70028},
-        {(unsigned long *)0xd420b120, 0x0022000e},
-		/*
-        {(unsigned long *)0xd420b124, 0x00000000},
-        {(unsigned long *)0xd420b128, 0x00000000},
-        {(unsigned long *)0xd420b12c, 0x00000000},
-        {(unsigned long *)0xd420b130, 0x00000000},
-        {(unsigned long *)0xd420b134, 0x00000000},
-        {(unsigned long *)0xd420b138, 0x00000000},
-        {(unsigned long *)0xd420b13c, 0x00000000},
-        {(unsigned long *)0xd420b140, 0x00000000},
-        {(unsigned long *)0xd420b144, 0x00000000},
-		*/
-        {(unsigned long *)0xd420b148, 0x80000000},
-        {(unsigned long *)0xd420b14c, 0x00000640},
-        //{(unsigned long *)0xd420b150, 0x00000000},
-        {(unsigned long *)0xd420b154, 0x00000640},
-        //{(unsigned long *)0xd420b158, 0x00000000},
-        {(unsigned long *)0xd420b15c, 0x000000ff},
-        //{(unsigned long *)0xd420b160, 0x00000000},
-        {(unsigned long *)0xd420b164, 0xe0400000},
-        {(unsigned long *)0xd420b168, 0x6028c838},
-        //{(unsigned long *)0xd420b16c, 0x00000000},
-        {(unsigned long *)0xd420b170, 0x00020000},
-        {(unsigned long *)0xd420b174, 0x5119824c},
-        {(unsigned long *)0xd420b178, 0x03000000},
-        {(unsigned long *)0xd420b17c, 0x00000004},
-        {(unsigned long *)0xd420b180, 0x02000f0e},
-        {(unsigned long *)0xd420b184, 0x00008808},
-		/*
-        {(unsigned long *)0xd420b188, 0x00000000},
-        {(unsigned long *)0xd420b18c, 0x00000000},
-        {(unsigned long *)0xd420b198, 0x00000000},
-        {(unsigned long *)0xd420b19c, 0x00000000},
-        {(unsigned long *)0xd420b1a0, 0x00000000},
-		*/
-        {(unsigned long *)0xd420b1a4, 0x0000e000},
-        {(unsigned long *)0xd420b1a8, 0x80000007},
-        {(unsigned long *)0xd420b1ac, 0x00004000},
-        {(unsigned long *)0xd420b1b0, 0x20004000},
-        {(unsigned long *)0xd420b1b4, 0x00004000},
-        {(unsigned long *)0xd420b1bc, 0x00000002},
-        {(unsigned long *)0xd420b1c0, 0x88000000},
-        {(unsigned long *)0xd420b1c4, 0x44C0018C},
-        {(unsigned long *)0xd420b1c8, 0x00000005},
-        {(unsigned long *)0xd420b1cc, 0xD420B000},
+	{(volatile unsigned int *) 0xd428284c, 0x0000007f}, // APMU_LCD_CLK_RES_CTRL
+	{(volatile unsigned int *) 0xd420b0c0, (unsigned long)lcdbase}, // LCD_SPU_DMA_START_ADDR_Y0
+	{(volatile unsigned int *) 0xd420b0c4, (unsigned long)lcdbase}, // LCD_SPU_DMA_START_ADDR_U0
+	{(volatile unsigned int *) 0xd420b0c8, (unsigned long)lcdbase}, // LCD_SPU_DMA_START_ADDR_V0
+	{(volatile unsigned int *) 0xd420b0cc, 0x00000000}, // LCD_CFG_DMA_START_ADDR_0
+	{(volatile unsigned int *) 0xd420b0d0, 0x00000000}, // LCD_SPU_DMA_START_ADDR_Y1
+	{(volatile unsigned int *) 0xd420b0d4, 0x00000000}, // LCD_SPU_DMA_START_ADDR_U1
+	{(volatile unsigned int *) 0xd420b0d8, 0x00000000}, // LCD_SPU_DMA_START_ADDR_V1
+	{(volatile unsigned int *) 0xd420b0dc, 0x00000000}, // LCD_CFG_DMA_START_ADDR_1
+	{(volatile unsigned int *) 0xd420b0e0, 0x00000a00}, // LCD_SPU_DMA_PITCH_YC
+	{(volatile unsigned int *) 0xd420b0e4, 0x00000000}, // LCD_SPU_DMA_PITCH_UV
+	{(volatile unsigned int *) 0xd420b0e8, 0x00000000}, // LCD_SPUT_DMA_OVSA_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b0ec, 0x02d00500}, // LCD_SPU_DMA_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b0f0, 0x02d00500}, // LCD_SPU_DZM_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b0f4, (unsigned long)lcdbase}, // LCD_CFG_GRA_START_ADDR0
+	{(volatile unsigned int *) 0xd420b0f8, (unsigned long)lcdbase}, // LCD_CFG_GRA_START_ADDR1
+	{(volatile unsigned int *) 0xd420b0fc, 0x00000640}, // LCD_CFG_GRA_PITCH
+	{(volatile unsigned int *) 0xd420b100, 0x00000000}, // LCD_SPU_GRA_OVSA_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b104, 0x02580320}, // LCD_SPU_GRA_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b108, 0x02580320}, // LCD_SPU_GZM_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b10c, 0x00000000}, // LCD_SPU_HWC_OVSA_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b110, 0x00000000}, // LCD_SPU_HWC_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b114, 0x02ee0672}, // LCD_SPUT_V_H_TOTAL
+	{(volatile unsigned int *) 0xd420b118, 0x02d00500}, // LCD_SPU_V_H_ACTIVE
+	{(volatile unsigned int *) 0xd420b11c, 0x006e00dc}, // LCD_SPU_H_PORCH
+	{(volatile unsigned int *) 0xd420b120, 0x00050014}, // LCD_SPU_V_PORCH
+	{(volatile unsigned int *) 0xd420b124, 0x00000000}, // LCD_SPU_BLANKCOLOR
+	{(volatile unsigned int *) 0xd420b128, 0x00000000}, // LCD_SPU_ALPHA_COLOR1
+	{(volatile unsigned int *) 0xd420b12c, 0x00000000}, // LCD_SPU_ALPHA_COLOR2
+	{(volatile unsigned int *) 0xd420b130, 0x00000000}, // LCD_SPU_COLORKEY_Y
+	{(volatile unsigned int *) 0xd420b134, 0x00000000}, // LCD_SPU_COLORKEY_U
+	{(volatile unsigned int *) 0xd420b138, 0x00000000}, // LCD_SPU_COLORKEY_V
+	{(volatile unsigned int *) 0xd420b190, 0x08040011}, // LCD_SPU_DMA_CTRL0
+	{(volatile unsigned int *) 0xd420b194, 0xa001ff81}, // LCD_SPU_DMA_CTRL1
+	{(volatile unsigned int *) 0xd420b1a8, 0x90000001}, // LCD_CFG_SCLK_DIV
+	{(volatile unsigned int *) 0xd420b1b8, 0x210ff003}, // LCD_SPU_DUMB_CTRL
+	{(volatile unsigned int *) 0xd420b1c8, 0x00000004}, // LCD_MISC_CNTL
 
-    	/* Enable power to LCD Panel. Set GPIO 84 as output */
-		{(unsigned long *)GPIO2_PSR_BASE, 0x100000},
-		{(unsigned long *)GPIO2_SDR_BASE, 0x100000},
 
-        {(unsigned long *)0xd420b1b8, 0x210ff10f}, // DUMB
-        {(unsigned long *)0xd420b190, 0x08001110}, // CTRL0
-        {(unsigned long *)0xd420b194, 0x20020081}, // CTRL1
+	/* Enable power to LCD Panel. Set GPIO 84 as output */
+	{(unsigned long *)GPIO2_PSR_BASE, 0x100000},
+	{(unsigned long *)GPIO2_SDR_BASE, 0x100000},
     };
-
 
     printf("Initializing LCD at address 0x%08x (updating %d registers)\n",
 		   (unsigned int)lcdbase,
 		   sizeof(register_values)/sizeof(*register_values));
 
-	memset(lcdbase, 0, 800*600*2);
+	memset(lcdbase, 0, 1280*720*2);
 
-    /* Initialize the LCD Controller regs to set the
-     * LCD to 800x600 RGB666 Dumb panel mode
-     */
-    for(i=0; i<sizeof(register_values)/sizeof(*register_values); i++) {
-		printf("Setting %p -> %p: ", register_values[i].offset, register_values[i].value);
+	/* Initialize the LCD Controller according to the known-good
+	 * values taken directly from Linux
+	 */
+	int t;
+	for(i=0; i<sizeof(register_values)/sizeof(*register_values); i++) {
 		*register_values[i].offset = register_values[i].value;
-		printf("%p\n", *register_values[i].offset);
-		//udelay(1000000);
+
+		/* Force readback to make value take effect immediately */
+		t = __raw_readl(register_values[i].offset);
 	}
 }
 
@@ -184,6 +143,6 @@ void lcd_enable() {
 }
 
 ulong calc_fbsize(void) {
-    return panel_info.vl_col * panel_info.vl_row * NBITS(panel_info.vl_bpix)/8;
+    return panel_info.vl_col * panel_info.vl_row * NBITS(panel_info.vl_bpix)/8*2;
 }
 

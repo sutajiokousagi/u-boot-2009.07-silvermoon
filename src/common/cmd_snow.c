@@ -38,41 +38,41 @@
 static int rand_num[RAND_SIZE];
     
 static inline int get_rand_num(void) {
-    static int offset = 0;
+	static int offset = 0;
 	int i;
-    if(++offset >= RAND_SIZE)
-        offset=0;
+	if(++offset >= RAND_SIZE)
+		offset=0;
 	i = rand_num[offset];
-    return i;
+	return i;
 }       
         
 struct flake {
-    int x, y;
-    int angle; 
-    int velocity;      
-    int active;
+	int x, y;
+	int angle; 
+	int velocity;      
+	int active;
 };      
         
         
 struct globe {
-    struct flake   flakes[MAX_FLAKES];
-    int            plane_w, plane_h;
-    char 		  *flake_count;
-    int            snow_lut[256];
-	short 		  *background;
+	struct flake	 flakes[MAX_FLAKES];
+	int		 plane_w, plane_h;
+	char		*flake_count;
+	int		 snow_lut[256];
+	short		*background;
 };  
     
     
     
 
 // The FPS we'll try to run at.
-#define FRAME_RATE 10
+#define FRAME_RATE 100
 
 struct screen {
-    int width, height;
-    int bpp; 
-    short *pixels;
-};      
+	int width, height;
+	int bpp; 
+	short *pixels;
+};
             
 struct pixel {
     int r, g, b;
@@ -131,40 +131,41 @@ static int update_snow(int irq) {
 
 void set_flake_state(struct screen *scr, struct globe *globe,
                          struct flake *flake, int on) {
-    int x1, x2, y1, y2;
+	int x1, x2, y1, y2;
 
-    // Set "on" to 1 or -1;
-    if(on)
-        on=1;
-    else
-        on=-1;
+	// Set "on" to 1 or -1;
+	if(on)
+		on=1;
+	else
+		on=-1;
 
-    // Just divide the x and y coordinates by 2 to get the screen coordinates.
-    x2 = x1 = flake->x >> 1;
-    y2 = y1 = flake->y >> 1;
+	// Just divide the x and y coordinates by 2 to get the screen coordinates.
+	x2 = x1 = flake->x >> 1;
+	y2 = y1 = flake->y >> 1;
 
-    // If the coordinate is odd, then it crosses a boundary.
-    if(flake->x&1)
-        x2++;
-    if(flake->y&1)
-        y2++;
+	// If the coordinate is odd, then it crosses a boundary.
+	if(flake->x&1)
+		x2++;
+	if(flake->y&1)
+		y2++;
 
-    // Ignore it if any pixels are offscreen.
-    if(x1 < 0 || x1 >= scr->width
-    || x2 < 0 || x2 >= scr->width
-    || y1 < 0 || y1 >= scr->height
-    || y2 < 0 || y2 >= scr->height)
-        return;
+	// Ignore it if any pixels are offscreen.
+	if(x1 < 0 || x1 >= scr->width
+	|| x2 < 0 || x2 >= scr->width
+	|| y1 < 0 || y1 >= scr->height
+	|| y2 < 0 || y2 >= scr->height)
+		return;
 
-    // Rescale the Y to an index into the flake_count buffer.
-    if(y1==y2)
-        y2 = (y1 *= scr->width);
-    else        y2 = (y1 *= scr->width)+scr->width;
+	// Rescale the Y to an index into the flake_count buffer.
+	if(y1==y2)
+		y2 = (y1 *= scr->width);
+	else
+		y2 = (y1 *= scr->width)+scr->width;
 
-    globe->flake_count[x1+y1]+=on;
-    globe->flake_count[x1+y2]+=on;
-    globe->flake_count[x2+y1]+=on;
-    globe->flake_count[x2+y2]+=on;
+	globe->flake_count[x1+y1]+=on;
+	globe->flake_count[x1+y2]+=on;
+	globe->flake_count[x2+y1]+=on;
+	globe->flake_count[x2+y2]+=on;
 }
 
 
@@ -267,26 +268,28 @@ int render_scene(struct globe *gl, struct screen *scr) {
 
 
 static int draw_frame(struct globe *gl, struct screen *scr) {
-    move_snow(gl, scr);
-    render_scene(gl, scr);
-    return 0;
+	move_snow(gl, scr);
+	render_scene(gl, scr);
+	return 0;
 }
 
 
 
 
 int place_initial_flakes(struct globe *gl, struct screen *scr, int count) {
-    int flake;
-    struct flake *fl;
-    for(flake=0; flake<count; flake++) {
-        fl = &gl->flakes[flake];
-        
-        fl->active = 1;
-        fl->x = get_rand_num()%gl->plane_w;
-        fl->y = get_rand_num()%gl->plane_h;
-        set_flake_state(scr, gl, fl, 1);
-    }   
-    return 0; 
+	int flake;
+	struct flake *fl;
+	printf("Placing %d flakes...\n", count);
+	for(flake=0; flake<count; flake++) {
+		fl = &gl->flakes[flake];
+
+		fl->active = 1;
+		fl->x = get_rand_num()%gl->plane_w;
+		fl->y = get_rand_num()%gl->plane_h;
+		set_flake_state(scr, gl, fl, 1);
+	}   
+	printf("All flakes placed\n");
+	return 0; 
 }       
 
 
@@ -311,7 +314,7 @@ int do_snow (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 		// If the user specified a partition, switch to that part.
 		if(argc >= 3 && !strcmp(argv[2], "1"))
-				part = 3;
+			part = 3;
 
 		// Do init.
 		scr.width  = SCREEN_WIDTH;
@@ -362,9 +365,11 @@ int do_snow (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		place_initial_flakes(&gl, &scr, 2048);
 
 		// Timer1 sits on IRQ13.  ICU_INT_CONF is therefore ICU_INT_CONF13.
+		printf("Setting IRQ handler...\n");
 		register_irq_handler(13, update_snow);
 
 		// Enable the interrupt, with a priority mask of 1.
+		printf("Resetting timer 1...\n");
 		*ICU_INT_CONF13 = 0x51;
 		reset_timer1();
 
@@ -380,31 +385,26 @@ int do_snow (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		if(argc < 4)
 			printf("Usage: %s load [partition] [filename]\n", argv[0]);
 		else {
-			unsigned long src_len = ~0UL, dst_len = ~0UL;
-			char mem_addr[16];
+			unsigned long src_len = ~0UL;
 			char part_name[4];
-			char *real_mem_addr;
-			static char load_buffer[1024*512];
+			unsigned long load_addr = simple_strtoul(getenv("default_load_addr"), 0, 16);
 
 			char *e2args[] = {
-				"ext2load", "mmc", part_name, mem_addr, argv[3],
+				"ext2load", "mmc", part_name, getenv("default_load_addr"), argv[3],
 			};
 
 			// ext2load must have an address that's on an 8-k boundary.
-			real_mem_addr = (char *)(((long)load_buffer & 0xfffff000)+0x1000);
-			sprintf(mem_addr, "0x%08x", real_mem_addr);
-
 			sprintf(part_name, "0:%s", argv[2]);
 			
 			if(!do_ext2load(cmdtp, flag, 5, e2args))
 				bzero(gl.background, scr.width*scr.height*scr.bpp);
 
 			printf("Unzipping...\n");
-			gunzip((void *)gl.background, dst_len, (void *)real_mem_addr, &src_len);
+			gunzip((void *)gl.background, sizeof(gl.background), (void *)load_addr, &src_len);
 
 			// Precalculate rand LUT.
 			printf("Precalculating RAND LUT...\n");
-			memcpy(rand_num, (void *)real_mem_addr, sizeof(rand_num));
+			memcpy(rand_num, (void *)load_addr, sizeof(rand_num));
 		}
 	}
 

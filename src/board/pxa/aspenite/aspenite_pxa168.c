@@ -846,17 +846,34 @@ void register_irq_handler(int irq, int (*handler)(int irq)) {
 void do_irq(void) {
     long *ICU_INT_STATUS_0 = (long *)0xd4282128;
     long *ICU_INT_STATUS_1 = (long *)0xd428212c;
-    int i;
+    int irq;
+    long status_0 = *ICU_INT_STATUS_0;
+    long status_1 = *ICU_INT_STATUS_1;
+    int (**my_handler_table)(int interrupt) = handler_table;
+    
+    int handled = 0;
 
-    for(i=0; i<32; i++)
-        if((*ICU_INT_STATUS_0)&(1<<i) && handler_table[i]) {
-			(handler_table[i])(i);
-			return;
-	}
+    irq = 0;
 
-    for(i=0; i<32; i++)
-        if((*ICU_INT_STATUS_1)&(1<<i) && handler_table[i+32]) {
-			(handler_table[i+32])(i+32);
-			return;
-		}
+    while (irq<32) { 
+        if(status_0&(1<<irq) && *my_handler_table) {
+            (*my_handler_table)(irq);
+            handled++;
+        }
+        irq++;
+        my_handler_table++;
+    }
+
+    while (irq<64) {
+        if(status_1&(1<<(irq-32)) && *my_handler_table) {
+            (*my_handler_table)(irq);
+            handled++;
+        }
+        irq++;
+        my_handler_table++;
+    }
+}
+
+void do_fiq(void) {
+    do_irq();
 }
