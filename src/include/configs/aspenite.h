@@ -251,7 +251,8 @@ CHUMBY_LENGTH_ubfb 0x00000200
     " ;"                                                        \
     "echo \"Loading boot logo.\" ;"                             \
     "ext2load mmc 0:2 ${default_load_addr} /boot/logo.raw.gz ;" \
-    "unzip ${default_load_addr} ${lcdbase} ;"                   \
+    "unzip ${default_load_addr} 0x02000000 ;"                   \
+    "cp.l 0x02000000 ${lcdbase} 0x70800 ;"                      \
     " ;"                                                        \
     /* Wait for the user to press Control-C */                  \
     "echo \"Press Control-C to enter a shell.\" ;"              \
