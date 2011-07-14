@@ -35,11 +35,10 @@
 #define DDR_HACK 1
 #define PLL_HACK
 
-extern void aspen_init();
-extern void BBU_LCD_init();
-extern void BBU_TPO_INIT();
-extern void BBU_I2C_Init();
-extern void BBU_Timer_init();
+extern void aspen_init(void);
+extern void BBU_LCD_init(int);
+extern void BBU_I2C_Init(void);
+extern void BBU_Timer_init(int);
 extern int reconfigure_plls(void);
 
 /* ------------------------------------------------------------------------- */
@@ -541,10 +540,9 @@ int board_init (void)
 #endif
     }
 
-    BBU_Timer_init();
+    BBU_Timer_init(0);
     BBU_I2C_Init();
-    BBU_LCD_init();
-    BBU_TPO_INIT();
+    BBU_LCD_init(8);
 
 	// Marvell CPUID is needed for cpu_is_pxa168() to work properly
 	// but causes xdb3.3 to not work
@@ -568,7 +566,6 @@ int board_init (void)
 #endif
 
     /* ensure L2 cache is not mapped as SRAM */
-    *(unsigned int *)0xd4282c08 &= ~(1<<4);
 
     /* lowering RTC setting could improve Vmin */
     *(unsigned int *)0xd4282c10 = 0x16b5ad6d;
@@ -576,25 +573,28 @@ int board_init (void)
 
     /* Enable clocks */
     *(unsigned int *)0xD4051024 = 0xffffffff;
+
     /* enable UART2 clock */
     *(unsigned int *)0xD4015000 = 0x13;
 
-	/* Enable L2 cache */
-	__asm__ __volatile__ (
-			"@ invalidate L2 cache\n\t"
-			"mov %0, #0\n\t"
-			"mcr p15, 1, %0, c7, c7, 0\n\t"
-			"@ L2 - Outer writeback\n\t"
-			"@ enable L2 cache\n\t"
-			"mrc p15, 0, %0, c1, c0, 0\n\t"
-			"orr %0, %0, #(1 << 26)\n\t"
-			"mcr p15, 0, %0, c1, c0, 0\n\t"
-			"@ invalidate L2 cache\n\t"
-			"bic %0, %0, #31\n\t"
-			"mcr p15, 1, %0, c7, c7, 0\n\t"
-           :
-           : "r"(0x1)
-    );
+
+    /* Enable L2 cache */
+
+    /* Disable bank 3 in SQU by clearing EN_BK3 in SQU_CTRL2 register */
+    *(unsigned int *)0xd42a0030 = 0;
+
+    /* Clear L2_RAM_SEL in PJ1 CPU_Conf register */
+    *(unsigned int *)0xd4282c08 &= ~0x00000010;
+
+    /* Enable L2 cache by clearing (setting?) L2 Cache_Enable bit (bit 26) in CP15R1 Control Register */
+    asm ("mrc p15, 0, %0, c1, c0, 0":"=r" (i));
+    i |= (1<<26);
+    asm ("mcr p15, 0, %0, c1, c0, 0": :"r" (i));
+
+    /* Invalidate the L2 cache using the "L2 Cache Invalidate All" (CP15R7) instruction */
+    asm ("mcr p15, 1, %0, c7, c7, 0": :"r" (i));
+
+
 
 
 
