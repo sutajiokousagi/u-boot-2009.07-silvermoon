@@ -143,8 +143,6 @@ void lcd_ctrl_init(void *lcdbase) {
 void lcd_enable() {
     /* Enable Dumb LCD panel */
     lcdc_writel(LCD_SPU_DUMB_CTRL, lcdc_readl(LCD_SPU_DUMB_CTRL) | 0x1);
-    /* Enable Graphic Transfer enable */
-    lcdc_writel(LCD_SPU_DMA_CTRL0, lcdc_readl(LCD_SPU_DMA_CTRL0) | (0x1<<8));
 }
 
 ulong calc_fbsize(void) {
