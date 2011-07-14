@@ -165,6 +165,7 @@
 #define CONFIG_CMD_FAT      1
 #endif
 #define CONFIG_CMD_MMC      1
+#define CONFIG_MMC_MULTBLK_RW_SUPPORT
 #define CONFIG_MMC      1
 #define CONFIG_MMC3     1
 #define CONFIG_GENERIC_MMC  1
@@ -235,7 +236,8 @@
     "echo \"Booting to ${PARTNAME}...\" ;"                      \
     " ;"                                                        \
     /* Load the kernel from the config area */                  \
-    "ext2load mmc 0:${KF} ${default_load_addr} /boot/zImage && cconfigload mmc 0 ${default_load_addr} ${KB};"\
+    /*"ext2load mmc 0:${KF} ${default_load_addr} /boot/zImage && cconfigload mmc 0 ${default_load_addr} ${KB};"*/\
+    "cconfigload mmc 0 ${default_load_addr} ${KB};"             \
     "bootz ${default_load_addr} ;"                              \
     ""
     //"cconfigload mmc 0 ${default_load_addr} ${KERN} ;"
