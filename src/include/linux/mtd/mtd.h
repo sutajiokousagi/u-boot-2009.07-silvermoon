@@ -115,6 +115,15 @@ struct mtd_info {
 	u_int32_t oobsize;   /* Amount of OOB data per block (e.g. 16) */
 	u_int32_t oobavail;  /* Available OOB bytes per block */
 
+	/*
+	 * If erasesize is a power of 2 then the shift is stored in
+	 * erasesize_shift otherwise erasesize_shift is zero. Ditto writesize.
+	 */
+	unsigned int erasesize_shift;
+	unsigned int writesize_shift;
+	/* Masks based on erasesize_shift and writesize_shift */
+	unsigned int erasesize_mask;
+	unsigned int writesize_mask;
 	/* Kernel-only stuff starts here. */
 	const char *name;
 	int index;
@@ -283,6 +292,10 @@ static inline void mtd_erase_callback(struct erase_info *instr)
 }
 #endif
 
+static inline int is_power_of_2(unsigned long n)
+{
+	return (n != 0 && ((n & (n - 1)) == 0));
+}
 /*
  * Debugging macro and defines
  */

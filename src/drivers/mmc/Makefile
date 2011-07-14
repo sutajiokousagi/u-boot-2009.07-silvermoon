@@ -29,6 +29,7 @@ COBJS-$(CONFIG_ATMEL_MCI) += atmel_mci.o
 COBJS-$(CONFIG_GENERIC_MMC) += mmc.o
 COBJS-$(CONFIG_PXAMCI) += pxamci.o
 COBJS-$(CONFIG_PXASDH) += pxa_sdh.o
+COBJS-$(CONFIG_PXA9XX_SDH) += pxa9xx_sdh.o
 
 COBJS	:= $(COBJS-y)
 SRCS	:= $(COBJS:.o=.c)

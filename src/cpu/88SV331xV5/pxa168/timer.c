@@ -37,6 +37,10 @@
 
 #include <asm/io.h>
 #include <common.h>
+#include <asm/arch/interrupt.h>
+#include <asm/arch/regs-rtc.h>
+#include <asm/arch/rtc.h>
+
 
 #define READ_TIMER ({volatile int loop=100; \
 	         	*(volatile ulong *)(CONFIG_SYS_TIMERBASE+0xa4) = 0x1; \
@@ -47,6 +51,21 @@
 
 static ulong timestamp;
 static ulong lastdec;
+
+#ifdef CONFIG_USE_IRQ
+static void timer_isr(void *data)
+{
+	printf("timer_isr():  called for IRQ %d\n", (int)data);
+	*(volatile ulong *)(CONFIG_SYS_TIMERBASE + 0x74) = 0x1;
+}
+#ifdef CONFIG_TIMER2
+static void timer2_isr(void *data)
+{
+	printf("timer2_isr():  called for IRQ %d\n", (int)data);
+	*(volatile ulong *)(CONFIG_TIMER2_BASE + 0x74) = 0x1;
+}
+#endif
+#endif
 
 int timer_init(void)
 {
@@ -72,7 +91,66 @@ int timer_init(void)
 	*(volatile ulong *)(CONFIG_SYS_TIMERBASE + 0x84) = 0x1;
 	/* init the timestamp and lastdec value */
 	reset_timer_masked();
+
+#ifdef CONFIG_TIMER2
+	*(volatile unsigned int *)0xD4015044 = 5;
+	i = 0x10000;
+	while(i --);
+
+	*(volatile unsigned int *)0xD4015044 = 0x13; //Choose 32 KHz Clock Frequency
+	i = 0x10000;
+	while(i --);
+
+	*(volatile ulong *)(CONFIG_TIMER2_BASE + 0) = 0x0; //KV
+	/* Select match register */
+	*(volatile ulong *)(CONFIG_TIMER2_BASE + 4) = 0xffffffff;
+	/* Preload value. */
+	*(volatile ulong *)(CONFIG_TIMER2_BASE + 0x4c) = 0;
+	/* Preload control. */
+	*(volatile ulong *)(CONFIG_TIMER2_BASE + 0x58) = 0x0;
+
+	/* Enable counter 0.  */
+	*(volatile ulong *)(CONFIG_TIMER2_BASE + 0x84) = 0x1;
+#endif
+
+#ifdef CONFIG_USE_IRQ
+	/* enable timer interrupt */
+	INT_Enable(INT_AP_TMR1, IRQ_ROUTE, TIMER_PRIORITY);
+
+	/* install interrupt handler for timer */
+	ISR_Connect(INT_AP_TMR1, timer_isr, (void *)0);
+#ifdef CONFIG_TIMER2
+	/* enable timer interrupt */
+	INT_Enable(INT_AP2_TMR1, IRQ_ROUTE, TIMER_PRIORITY);
+
+	/* install interrupt handler for timer */
+	ISR_Connect(INT_AP2_TMR1, timer2_isr, (void *)0);
+#endif
+#endif
+	RTC_init();
+
+	return 0;
 }
+
+void set_timer_match(ulong secs)
+{
+	*(volatile ulong *)(CONFIG_SYS_TIMERBASE + 0x4) =
+		(READ_TIMER + secs * CONFIG_SYS_HZ);
+	*(volatile ulong *)(CONFIG_SYS_TIMERBASE + 0x74) = 0x1;
+	*(volatile ulong *)(CONFIG_SYS_TIMERBASE + 0x40) = 0x1;
+}
+
+#ifdef CONFIG_TIMER2
+void set_timer2_match(ulong secs)
+{
+	unsigned int temp;
+	temp = *(volatile ulong *)(CONFIG_TIMER2_BASE + 0x28);
+	temp += secs * CONFIG_TIMER2_HZ;
+	*(volatile ulong *)(CONFIG_TIMER2_BASE + 0x4) = temp;
+	*(volatile ulong *)(CONFIG_TIMER2_BASE + 0x74) = 0x1;
+	*(volatile ulong *)(CONFIG_TIMER2_BASE + 0x40) = 0x1;
+}
+#endif
 
 void reset_timer_masked (void)
 {
@@ -173,3 +251,121 @@ unsigned long long get_ticks(void)
 	return READ_TIMER;
 }
 
+
+/******************************** rtc ***********************************/
+void  RTC_set_raw_time(BU_U32 rawt)
+{
+	BU_REG_WRITE( RTC_CNR, rawt);
+}
+
+BU_U32 RTC_get_raw_time()
+{
+	return BU_REG_READ( RTC_CNR );
+}
+
+void RTC_enable_1hz_int()
+{
+	BU_REG_WRITE( RTC_SR, BU_REG_READ(RTC_SR) | RTC_SR_HZE);
+}
+
+void RTC_enable_alarm_int()
+{
+	BU_REG_WRITE( RTC_SR, BU_REG_READ(RTC_SR) | RTC_SR_ALE);
+}
+
+void RTC_disable_1hz_int()
+{
+	BU_REG_WRITE( RTC_SR, BU_REG_READ(RTC_SR) & ~RTC_SR_HZE);
+}
+
+void RTC_disable_alarm_int()
+{
+	BU_REG_WRITE( RTC_SR, BU_REG_READ(RTC_SR) & ~ RTC_SR_ALE);
+}
+
+void RTC_set_alarm( BU_U32 rm )
+{
+	BU_REG_WRITE( RTC_AR, rm );
+	RTC_enable_alarm_int();
+}
+
+#ifdef CONFIG_USE_IRQ
+void RTC_ISR(void *data)
+{
+	BU_U32	sr;
+	static int sec = 0;
+
+	sr = BU_REG_READ( RTC_SR );
+	if ( sr & RTC_SR_ALE && sr & RTC_SR_AL )
+	{
+		printf("Alarm wakeup at %x!\n", BU_REG_READ(RTC_CNR) );
+
+		BU_REG_WRITE( RTC_SR, ( sr & (RTC_SR_HZE|RTC_SR_ALE )) | RTC_SR_AL );
+		BU_REG_WRITE( RTC_AR, 0 );
+		return;
+	}
+
+	if ( sr & RTC_SR_HZE && sr & RTC_SR_HZ )
+	{
+		sec++;
+		printf("%d", sec);
+		BU_REG_WRITE( RTC_SR, ( sr & (RTC_SR_HZE|RTC_SR_ALE )) | RTC_SR_HZ );
+		return;
+	}
+
+	// else PMU Wake up BUG: in the PMU
+	printf("PMU Alarm wakeup at %x!\n", BU_REG_READ(RTC_CNR) );
+	BU_REG_WRITE( RTC_SR, sr | (RTC_SR_AL|RTC_SR_HZ) );
+	BU_REG_WRITE( RTC_AR, 0 );
+
+	return;
+}
+#endif
+
+#define APBC_RTC_CLK_RST (0xd4015028)
+
+void RTC_init(void)
+{
+	volatile int i;
+	BU_U32 reg;
+
+	BU_REG_WRITE( APBC_RTC_CLK_RST, 0x5);
+	reg=BU_REG_READ( APBC_RTC_CLK_RST);
+	i=0x200;
+	while(i--);
+
+	BU_REG_WRITE( APBC_RTC_CLK_RST, 3);
+	reg=BU_REG_READ( APBC_RTC_CLK_RST);
+	i=0x300;
+	while(i--);
+
+	BU_REG_WRITE( APBC_RTC_CLK_RST, 0x83);
+	reg=BU_REG_READ( APBC_RTC_CLK_RST);
+	i=0x300;
+	while(i--);
+
+#ifdef CONFIG_USE_IRQ
+	INT_Enable( INT_RTC_ALARM, IRQ_ROUTE, RTC_PRIORITY );
+	ISR_Connect(INT_RTC_ALARM, RTC_ISR, 0);
+
+	INT_Enable( INT_RTC_1HZ, IRQ_ROUTE, RTC_PRIORITY );
+	ISR_Connect(INT_RTC_1HZ, RTC_ISR, 0);
+#endif
+
+	RTC_disable_alarm_int();
+	RTC_disable_1hz_int();
+
+	BU_REG_WRITE( RTC_CNR, 0 );
+	BU_REG_WRITE( RTC_AR,  0 );
+}
+
+void rtc_alarm_to_pmu(int alarm_secs)
+{
+	BU_U32 raw_t;
+
+	printf("Alarm setup for %d seconds\n", alarm_secs);
+
+	raw_t = RTC_get_raw_time();
+	raw_t += alarm_secs;
+	RTC_set_alarm( raw_t );
+}

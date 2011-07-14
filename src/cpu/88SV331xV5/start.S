@@ -167,6 +167,22 @@ stack_setup:
 #endif
 	sub	sp, r0, #12		/* leave 3 words for abort-stack    */
 
+
+#ifdef CONFIG_USE_IRQ
+	/* relocate vector to 0x0 so we can enable interrupt */
+	adr	r0, _start
+	add	r0, r0, #0x4
+	mov	r1, #0x4
+vec_reloc:
+	ldr	r2, [r0]
+	str	r2, [r1]
+	add	r1, r1, #0x4
+	add	r0, r0, #0x4
+	cmp	r1, #0x40
+	bne	vec_reloc
+#endif
+
+
 clear_bss:
 	ldr	r0, _bss_start		/* find start of bss segment        */
 	ldr	r1, _bss_end		/* stop here                        */

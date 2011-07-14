@@ -49,8 +49,9 @@ extern char *ep2_buf;
 #endif
 static int   ep2_len;
 static int   ep2_remain;
-static struct usb_request ep2_req;
 static usb_callback_t ep2_callback;
+
+extern int mv_usb_ep_queue (struct mv_usb_ep *usb_ep, struct usb_request *_req);
 
 static void ep2_start(void)
 {
@@ -110,13 +111,11 @@ extern int usb_connected;
 
 void ep2_int_hndlr(struct usb_request *usb_req)
 {
-	unsigned int desc_num, length, i, count;
-
 	ep2_remain = ep2_len - usb_req->length;
 
 	ep2_done(0);
 	if( usb_debug) 
-		printf("ep2_int_hndlr end: ep2_remain %d buf %d, len %d\n",
+		printf("ep2_int_hndlr end: ep2_remain %d buf %p, len %d\n",
 			ep2_remain, usb_req->buf, usb_req->length);
 
 	return;
@@ -124,8 +123,6 @@ void ep2_int_hndlr(struct usb_request *usb_req)
 
 int ep2_recv(char *buf, int len, usb_callback_t callback)
 {
-	int flags;
-
 	if (ep2_len){
 		printf("%s, busy, ep2_len %d\n", __FUNCTION__, ep2_len);
 		return -EBUSY;

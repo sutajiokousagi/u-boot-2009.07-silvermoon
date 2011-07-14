@@ -35,6 +35,8 @@
 #define DDR_HACK 1
 #define PLL_HACK
 
+#define GPIO26_ND_RnB1             MFP_CFG_DRV(GPIO26, AF1, DS12X)
+
 extern void aspen_init(void);
 extern void BBU_LCD_init(int);
 extern void BBU_I2C_Init(void);
@@ -844,45 +846,6 @@ int board_mmc_init(bd_t *bd)
 
 
 
-static int (*handler_table[64])(int interrupt);
-
-
-void register_irq_handler(int irq, int (*handler)(int irq)) {
-    handler_table[irq] = handler;
-}
-
-
-void do_irq(void) {
-    long *ICU_INT_STATUS_0 = (long *)0xd4282128;
-    long *ICU_INT_STATUS_1 = (long *)0xd428212c;
-    int irq;
-    long status_0 = *ICU_INT_STATUS_0;
-    long status_1 = *ICU_INT_STATUS_1;
-    int (**my_handler_table)(int interrupt) = handler_table;
-    
-    int handled = 0;
-
-    irq = 0;
-
-    while (irq<32) { 
-        if(status_0&(1<<irq) && *my_handler_table) {
-            (*my_handler_table)(irq);
-            handled++;
-        }
-        irq++;
-        my_handler_table++;
-    }
-
-    while (irq<64) {
-        if(status_1&(1<<(irq-32)) && *my_handler_table) {
-            (*my_handler_table)(irq);
-            handled++;
-        }
-        irq++;
-        my_handler_table++;
-    }
-}
-
-void do_fiq(void) {
-    do_irq();
+void show_boot_progress (int status)
+{
 }

@@ -109,7 +109,7 @@ static void reset_timer1(void) {
 
 
 static int irq_is_running=0;
-static int update_snow(int irq) {
+static int update_snow(void *data) {
 	long *TMR_ICR1 = (long *)0xd4014074;
 
 	// Set the timer up first.
@@ -293,7 +293,7 @@ int place_initial_flakes(struct globe *gl, struct screen *scr, int count) {
 }       
 
 
-void register_irq_handler(int reg, int (*handler)(int interrupt));
+void ISR_Connect(int int_num, void (*m_func)( void *data), void *data);
 
 int do_snow (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
@@ -366,7 +366,7 @@ int do_snow (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 		// Timer1 sits on IRQ13.  ICU_INT_CONF is therefore ICU_INT_CONF13.
 		printf("Setting IRQ handler...\n");
-		register_irq_handler(13, update_snow);
+		ISR_Connect(13, update_snow, NULL);
 
 		// Enable the interrupt, with a priority mask of 1.
 		printf("Resetting timer 1...\n");

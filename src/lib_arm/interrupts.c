@@ -157,14 +157,12 @@ void do_not_used (struct pt_regs *pt_regs)
 	bad_mode ();
 }
 
-#ifndef CONFIG_USE_FIQ
 void do_fiq (struct pt_regs *pt_regs)
 {
 	printf ("fast interrupt request\n");
 	show_regs (pt_regs);
 	bad_mode ();
 }
-#endif
 
 #ifndef CONFIG_USE_IRQ
 void do_irq (struct pt_regs *pt_regs)

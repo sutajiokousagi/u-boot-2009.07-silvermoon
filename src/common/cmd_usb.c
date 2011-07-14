@@ -264,6 +264,16 @@ void usb_display_config(struct usb_device *dev)
 	printf("\n");
 }
 
+static inline char *portspeed(int speed)
+{
+	if (speed == USB_SPEED_HIGH)
+		return "480 Mb/s";
+	else if (speed == USB_SPEED_LOW)
+		return "1.5 Mb/s";
+	else
+		return "12 Mb/s";
+}
+
 /* shows the device tree recursively */
 void usb_show_tree_graph(struct usb_device *dev, char *pre)
 {
@@ -310,7 +320,7 @@ void usb_show_tree_graph(struct usb_device *dev, char *pre)
 	pre[index] = 0;
 	printf(" %s (%s, %dmA)\n", usb_get_class_desc(
 					dev->config.if_desc[0].bInterfaceClass),
-					dev->slow ? "1.5MBit/s" : "12MBit/s",
+					portspeed(dev->speed),
 					dev->config.MaxPower * 2);
 	if (strlen(dev->mf) || strlen(dev->prod) || strlen(dev->serial))
 		printf(" %s  %s %s %s\n", pre, dev->mf, dev->prod, dev->serial);
@@ -339,6 +349,7 @@ void usb_show_tree(struct usb_device *dev)
  * usb boot command intepreter. Derived from diskboot
  */
 #ifdef CONFIG_USB_STORAGE
+#ifndef CONFIG_PXAXXX
 int do_usbboot(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	char *boot_device = NULL;
@@ -490,6 +501,7 @@ int do_usbboot(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	}
 	return 0;
 }
+#endif /* CONFIG_PXAXXX */
 #endif /* CONFIG_USB_STORAGE */
 
 
@@ -632,6 +644,28 @@ int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			return 1;
 		}
 	}
+	if (strcmp(argv[1], "write") == 0) {
+		if (usb_stor_curr_dev < 0) {
+			printf("no current device selected\n");
+			return 1;
+		}
+		if (argc == 5) {
+			unsigned long addr = simple_strtoul(argv[2], NULL, 16);
+			unsigned long blk  = simple_strtoul(argv[3], NULL, 16);
+			unsigned long cnt  = simple_strtoul(argv[4], NULL, 16);
+			unsigned long n;
+			printf("\nUSB write: device %d block # %ld, count %ld"
+				" ... ", usb_stor_curr_dev, blk, cnt);
+			stor_dev = usb_stor_get_dev(usb_stor_curr_dev);
+			n = stor_dev->block_write(usb_stor_curr_dev, blk, cnt,
+						(ulong *)addr);
+			printf("%ld blocks write: %s\n", n,
+						(n == cnt) ? "OK" : "ERROR");
+			if (n == cnt)
+				return 0;
+			return 1;
+		}
+	}
 	if (strncmp(argv[1], "dev", 3) == 0) {
 		if (argc == 3) {
 			int dev = (int)simple_strtoul(argv[2], NULL, 10);
@@ -677,14 +711,17 @@ U_BOOT_CMD(
 	" devices\n"
 	"usb read addr blk# cnt - read `cnt' blocks starting at block `blk#'\n"
 	"    to memory address `addr'\n"
+	"usb write addr blk# cnt - write `cnt' blocks starting at block `blk#'\n"
+	"    from memory address `addr'"
 );
 
-
+#ifndef CONFIG_PXAXXX
 U_BOOT_CMD(
 	usbboot,	3,	1,	do_usbboot,
 	"usbboot - boot from USB device\n",
 	"loadAddr dev:part\n"
 );
+#endif /* CONFIG_PXAXXX */
 
 #else
 U_BOOT_CMD(

@@ -23,6 +23,7 @@
  * BSP related functions
  *****************************************************************************/
 
+#if 0
 #define U2O_MEM_SIZE 0x20000 // 128KB memory
 static unsigned char mem_base[U2O_MEM_SIZE];
 static unsigned long mem_ptr = (unsigned long)&mem_base[0];
@@ -30,21 +31,29 @@ static unsigned long mem_size = U2O_MEM_SIZE;
 
 static unsigned long dma_base = 0;
 static unsigned long dma_ptr = 0;
+#endif
 static unsigned long dma_size = 0x10000;
 
 static struct usb_request setup_req;
 
 #undef U2O_MALLOC  /* cache flush/invalidate function fail, don't use malloc here */
 
+#ifdef DEBUG
 #define PRINTF_BUFFER_LENGTH 1024
 static char printf_buffer[PRINTF_BUFFER_LENGTH];
+#endif
 
+extern void usb_driver_speed(int speed);
+extern void ep2_begin(void);
+extern void mvUsbCh9SetConfig(_usb_device_handle handle,
+			boolean setup, SETUP_STRUCT *setup_ptr);
+extern int mv_usb_ep_enable(struct mv_usb_ep *usb_ep, ep_desc_t *ep_desc);
 
+#if 0
 #define __raw_readl(addr) 	(*(volatile u32 *) (addr))
 #define readl(addr) 		(*(volatile u32 *) (addr))
 #define writel(b, addr)		((*(volatile u32 *) (addr)) = (b))
 
-#if 0
 static void mvOsPrintf(const char *fmt, ...)
 {
 	va_list args;
@@ -83,23 +92,23 @@ static void *u2o_dma_malloc(void *dev, uint_32 size, uint_32 align,
 	USB_printf("%s ptr %p size %x\n", __func__, ptr, (int)size);
 #else
 	ptr = malloc(dma_size);
-	*paddr = ptr;
+	*paddr = (unsigned long)ptr;
 #endif
 	return ptr;
 }
 
-static void u2o_dma_free(void * ptr)
+static void u2o_dma_free(void *pDev, uint_32 size, unsigned long phyAddr, void *pVirtAddr)
 {
 #if 0
 	USB_printf("%s!!! ptr %p\n\n", __func__, ptr);
 	dma_ptr = dma_base;
 	memset((void*)dma_base, 0, sizeof(dma_base));
 #else
-	free(ptr);
+	free(pVirtAddr);
 #endif
 }
 
-void *u2o_malloc(unsigned long size)
+void *u2o_malloc(unsigned int size)
 {
 #ifdef U2O_MALLOC
 	void *ptr = (void *)mem_ptr;
@@ -116,7 +125,6 @@ void *u2o_malloc(unsigned long size)
 	printf("%s ptr %p size %x\n", __func__, ptr, (int)size);
 	return ptr;
 #else
-	int a;
 	return malloc(size);
 #endif
 }
@@ -133,6 +141,7 @@ static void u2o_free(void * ptr)
 #endif
 }
 
+#if 0
 static void dma_flush_range(unsigned start, unsigned end)
 {
 	/* still has problem here, may cause data crupt */
@@ -166,35 +175,38 @@ static void dma_inv_range(unsigned start, unsigned end)
         "blo     1b \n\t" 
         "mcr     p15, 0, r0, c7, c10, 4          @ data write barrier \n\t");
 }
+#endif
 
-static void u2o_cache_flush(void* dev, void* vaddr, int size)
+static unsigned long u2o_cache_flush(void *dev, void *vaddr, int size)
 {
-	unsigned start = (unsigned)vaddr, end = ((unsigned)vaddr + size);
 #ifdef U2O_MALLOC
+	unsigned start = (unsigned)vaddr, end = ((unsigned)vaddr + size);
 	USB_printf("%s start %p size %d end %p\n\n", __func__, start, size, end);
 	dma_flush_range(start, end);
 #endif
+	return 0;
 }
 
-static void u2o_cache_invalidate(void* dev, void* vaddr, int size)
+static unsigned long u2o_cache_invalidate(void *dev, void *vaddr, int size)
 {
+#ifdef U2O_MALLOC
 	unsigned start = (unsigned)vaddr, end = (unsigned)vaddr + size;
 	
-#ifdef U2O_MALLOC
 	USB_printf("%s start %p size %d end %p\n\n", __func__, start, size, end);
 	dma_inv_range(start, end);
 #endif
+	return 0;
 }
 static unsigned long u2o_virt_to_phys(void* dev, void* vaddr)
 {
 	return ((unsigned long)vaddr);
 }
 
-static unsigned int *u2o_get_caps_addr(int dev_num)
+static uint_32 u2o_get_caps_addr(int dev_num)
 {
 	struct mv_usb_dev *mv_dev = &the_controller;
 	
-	return (unsigned int*)(mv_dev->regbase + (0x100 >> 2));
+	return (unsigned int)(mv_dev->regbase + (0x100 >> 2));
 }
 
 static void u2o_reset_complete(int dev_num)
@@ -290,7 +302,7 @@ void mv_usb_bus_reset_service(void*      handle,
                                uint_8     error)
 {
     struct mv_usb_dev       *mv_dev = &the_controller;
-    int                     i, dev_no = _usb_device_get_dev_num(handle);
+    int                     i;
     struct mv_usb_ep        *mv_ep;
 
     if(setup == 0)
@@ -317,7 +329,7 @@ void mv_usb_bus_reset_service(void*      handle,
         mv_usb_start_ep0(mv_dev);
 	
         /* setup the ep0 receive buffer */
-        setup_req.buf = u2o_dma_malloc(mv_dev, sizeof(usb_dev_request_t), 0x20, &i);
+        setup_req.buf = u2o_dma_malloc(mv_dev, sizeof(usb_dev_request_t), 0x20, (unsigned long *)&i);
         setup_req.length = sizeof(usb_dev_request_t);
         mv_usb_ep_queue(&mv_dev->ep[0], &setup_req);
 
@@ -335,9 +347,6 @@ void mv_usb_speed_service(void*      handle,
                            uint_32    length, 
                            uint_8     error)
 {
-    int                     dev_no = _usb_device_get_dev_num(handle);
-    struct mv_usb_dev       *mv_dev = &the_controller;
-
     DBGMSG("Speed = %s\n", (length == ARC_USB_SPEED_HIGH) ? "High" : "Full");
 
     if(length == ARC_USB_SPEED_HIGH) 
@@ -358,9 +367,6 @@ void mv_usb_suspend_service(void*      handle,
                             uint_32    length, 
                             uint_8     error)
 {
-    int                     dev_no = _usb_device_get_dev_num(handle);
-    struct mv_usb_dev       *mv_dev = &the_controller;
-
 }
 
 void mv_usb_resume_service(void*      handle, 
@@ -371,9 +377,6 @@ void mv_usb_resume_service(void*      handle,
                             uint_32    length, 
                             uint_8     error)
 {
-    int                     dev_no = _usb_device_get_dev_num(handle);
-    struct mv_usb_dev       *mv_dev = &the_controller;
-
     DBGMSG("%s\n", __FUNCTION__);
 
     usbctl_next_state_on_event( kEvResume );
@@ -388,7 +391,6 @@ void mv_usb_tr_complete_service(void*      handle,
                                  uint_32    length, 
                                  uint_8     error)
 {
-    int                     dev_no = _usb_device_get_dev_num(handle);
     struct mv_usb_dev       *mv_dev = &the_controller;
     struct mv_usb_ep        *mv_ep;
     struct usb_request      usb_req;
@@ -420,7 +422,6 @@ void mv_usb_ep0_complete_service(void*      handle,
                                  uint_32    length, 
                                  uint_8     error)
 { /* Body */
-    int                     dev_no = _usb_device_get_dev_num(handle);
     struct mv_usb_dev       *mv_dev = &the_controller;
     struct mv_usb_ep        *mv_ep;
     struct usb_request      usb_req;
@@ -488,14 +489,13 @@ void mv_usb_ep0_complete_service(void*      handle,
 
             case REQ_SET_CONFIGURATION:
 		if (setup) {
-			extern void ep2_begin();
 			desc_t * pdesc = pxa_usb_get_descriptor_ptr();
 		        config_desc_t *cfg;
 		        intf_desc_t *intf;
 		        ep_desc_t *ep;
 		
 		        cfg = (config_desc_t*) (pdesc->cdb);
-		        intf = (config_desc_t *)(cfg + 1);
+			intf = (intf_desc_t *)((config_desc_t *)(cfg + 1));
 		        ep = (ep_desc_t *) (intf + 1);
 
 			USB_printf("\t\tSET_CONFIGURATION\n");
@@ -576,7 +576,6 @@ void mv_usb_ep0_complete_service(void*      handle,
 int      mv_usb_ep_queue (struct mv_usb_ep *usb_ep, struct usb_request *_req) 
 {
     struct mv_usb_dev* usb_dev =  &the_controller;
-    unsigned long       flags = 0;
     uint_8              error;
 
     DBGMSG("%s: num=%d-%s, _req=%p, buf=%p, length=%d is_enabled %d\n", 
@@ -620,7 +619,6 @@ int  mv_usb_ep_enable(struct mv_usb_ep *usb_ep, ep_desc_t *ep_desc)
     struct mv_usb_dev* usb_dev = &the_controller;
     __u16             maxSize;
     uint_8              epType; 
-    unsigned long       flags = 0;
 
     if(usb_ep->is_enabled)
     {
@@ -657,7 +655,6 @@ USB_IMPORT_FUNCS    usbImportFuncs =
 #ifdef DEBUG
 //	.bspPrintf =            mvOsPrintf,
 #endif
-	.bspSprintf =           NULL, 
 	.bspUncachedMalloc = 	u2o_dma_malloc,
 	.bspUncachedFree = 	u2o_dma_free,
 	.bspMalloc =            u2o_malloc,
@@ -667,8 +664,6 @@ USB_IMPORT_FUNCS    usbImportFuncs =
 	.bspCacheFlush = 	u2o_cache_flush,
 	.bspCacheInv =		u2o_cache_invalidate,
 	.bspVirtToPhys =	u2o_virt_to_phys,
-	.bspLock =              NULL,
-	.bspUnlock =            NULL,
 	.bspGetCapRegAddr =     u2o_get_caps_addr,
 	.bspResetComplete =     u2o_reset_complete
 };

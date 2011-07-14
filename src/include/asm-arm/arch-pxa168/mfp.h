@@ -447,10 +447,17 @@ typedef uint32_t mfp_cfg_t;
  *   edge detection logic disabled
  *   alternate function 0
  */
-#define MFPR_DEFAULT	(0x0840)
+#define MFPR_DEFAULT	(0x08C0)
+#define MFPR_EDGE_EN	(0x0880)
 
 #define MFP_CFG(pin, af)		\
 	((MFP_PIN_##pin << 16) | MFPR_DEFAULT | (MFP_##af))
+
+#define MFP_CFG_PULL(pin, af, pull)		\
+	((MFP_PIN_##pin << 16) | MFPR_DEFAULT | (MFP_##af) | ((MFP_##pull) << 12))
+
+#define MFP_CFG_EDGE(pin, af, edge, pull)		\
+	((MFP_PIN_##pin << 16) | MFPR_EDGE_EN | (MFP_##af) | ((MFP_##edge) << 4) | ((MFP_##pull) << 12))
 
 #define MFP_CFG_DRV(pin, af, drv)	\
 	((MFP_PIN_##pin << 16) | (MFPR_DEFAULT & ~MFPR_DRV_MASK) |\
@@ -544,15 +551,5 @@ void pxa3xx_mfp_config(mfp_cfg_t *mfp_cfgs, int num);
  */
 void __init pxa3xx_mfp_init_addr(struct pxa3xx_mfp_addr_map *);
 void __init pxa3xx_init_mfp(void);
-
-#ifdef CONFIG_ASPENITE
-
-#define GPIO_REGS_BASE  (0xD4019000)
-#define GPIO2_REGS_BASE (GPIO_REGS_BASE+0x8)
-#define GPIO2_PSR_BASE	(GPIO2_REGS_BASE+0x18)
-#define GPIO2_SDR_BASE  (GPIO2_REGS_BASE+0x54)
-
-
-#endif
 
 #endif /* __ASM_ARCH_MFP_H */

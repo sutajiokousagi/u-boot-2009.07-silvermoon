@@ -25,7 +25,7 @@
 PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
 	-msoft-float
 
-PLATFORM_CPPFLAGS += -march=armv5te -mtune=xscale -Os
+PLATFORM_CPPFLAGS += -march=armv5te -mtune=xscale
 # =========================================================================
 #
 # Supply options according to compiler version

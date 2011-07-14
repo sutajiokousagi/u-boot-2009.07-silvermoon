@@ -18,8 +18,11 @@ disclaimer.
 
 *******************************************************************************/
 
+#include "common.h"
+#include "asm/arch/common.h"
 #include "mvUsbDevApi.h"
 #include "mvUsbDevPrv.h"
+
 
 /*FUNCTION*-------------------------------------------------------------
 *
@@ -277,6 +280,10 @@ void _usb_dci_vusb20_chip_initialize
        port_control |= EHCI_PORTSCX_FORCE_FULL_SPEED_CONNECT;
 #endif
    }
+#ifdef CONFIG_CPU_PXA910_168
+   if(cpu_is_pxa920_z2())
+	   port_control |= EHCI_PORTSCX_FORCE_FULL_SPEED_CONNECT;
+#endif
    dev_ptr->REGISTERS.OPERATIONAL_DEVICE_REGISTERS.PORTSCX[0] = USB_32BIT_LE(port_control);
    port_control = USB_32BIT_LE(dev_ptr->REGISTERS.OPERATIONAL_DEVICE_REGISTERS.PORTSCX[0]);
  //  USB_printf("PORTSCX[0]===========%x\n", port_control);
@@ -499,24 +506,24 @@ uint_8 _usb_dci_vusb20_add_dTD
             uint_32 physAddr = USB_virt_to_phys((uint_8*)xd_ptr->WSTARTADDRESS + curr_offset);
 
 #if 1 //xj for test
-	    uint_32 virtAddr = (uint_8*)xd_ptr->WSTARTADDRESS + curr_offset;
+	    uint_32 virtAddr = (uint_32)((uint_8 *)xd_ptr->WSTARTADDRESS + curr_offset);
             
             dTD_ptr->BUFF_PTR0 = USB_32BIT_LE(physAddr);
 
             virtAddr += 4096;
-	    physAddr = USB_virt_to_phys(virtAddr);
+	    physAddr = (uint_32)USB_virt_to_phys(virtAddr);
             dTD_ptr->BUFF_PTR1 = USB_32BIT_LE(physAddr);
 
             virtAddr += 4096;
-	    physAddr = USB_virt_to_phys(virtAddr);
+	    physAddr = (uint_32)USB_virt_to_phys(virtAddr);
             dTD_ptr->BUFF_PTR2 = USB_32BIT_LE(physAddr);
 
             virtAddr += 4096;
-	    physAddr = USB_virt_to_phys(virtAddr);
+	    physAddr = (uint_32)USB_virt_to_phys(virtAddr);
             dTD_ptr->BUFF_PTR3 = USB_32BIT_LE(physAddr);
 
             virtAddr += 4096;
-	    physAddr = USB_virt_to_phys(virtAddr);
+	    physAddr = (uint_32)USB_virt_to_phys(virtAddr);
             dTD_ptr->BUFF_PTR4 = USB_32BIT_LE(physAddr);
 #else
             dTD_ptr->BUFF_PTR0 = USB_32BIT_LE(physAddr);
@@ -849,7 +856,6 @@ void _usb_dci_vusb20_process_tr_complete
                             ARC_DEBUG_CODE(ARC_DEBUG_FLAG_STATS, (usb_dev_ptr->STATS.usb_empty_complete_count++));
                         }
 			if (direction == ARC_USB_SEND) {
-				extern unsigned long temp_remove_count;
 				int count = 10000;
 					
 				while( (USB_32BIT_LE(dTD_ptr->SIZE_IOC_STS) & VUSBHS_TD_STATUS_ACTIVE) && count--);

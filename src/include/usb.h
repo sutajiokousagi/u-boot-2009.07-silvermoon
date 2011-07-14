@@ -138,7 +138,7 @@ enum {
 
 struct usb_device {
 	int	devnum;			/* Device number on USB bus */
-	int	slow;			/* Slow device? */
+	int	speed;			/* full/low/high */
 	char	mf[32];			/* manufacturer */
 	char	prod[32];		/* product */
 	char	serial[32];		/* serial number */
@@ -171,6 +171,7 @@ struct usb_device {
 	unsigned long status;
 	int act_len;			/* transfered bytes */
 	int maxchild;			/* Number of ports if hub */
+	int portnr;
 	struct usb_device *parent;
 	struct usb_device *children[USB_MAXCHILDREN];
 };
@@ -180,8 +181,9 @@ struct usb_device {
  */
 
 #if defined(CONFIG_USB_UHCI) || defined(CONFIG_USB_OHCI) || \
-	defined(CONFIG_USB_OHCI_NEW) || defined(CONFIG_USB_SL811HS) || \
-	defined(CONFIG_USB_ISP116X_HCD) || defined(CONFIG_USB_R8A66597_HCD)
+	defined(CONFIG_USB_EHCI) || defined(CONFIG_USB_OHCI_NEW) || \
+	defined(CONFIG_USB_SL811HS) || defined(CONFIG_USB_ISP116X_HCD) || \
+	defined(CONFIG_USB_R8A66597_HCD)
 
 int usb_lowlevel_init(void);
 int usb_lowlevel_stop(void);
@@ -308,8 +310,8 @@ int usb_set_interface(struct usb_device *dev, int interface, int alternate);
 /* Create various pipes... */
 #define create_pipe(dev,endpoint) \
 		(((dev)->devnum << 8) | (endpoint << 15) | \
-		((dev)->slow << 26) | (dev)->maxpacketsize)
-#define default_pipe(dev) ((dev)->slow << 26)
+		((dev)->speed << 26) | (dev)->maxpacketsize)
+#define default_pipe(dev) ((dev)->speed << 26)
 
 #define usb_sndctrlpipe(dev, endpoint)	((PIPE_CONTROL << 30) | \
 					 create_pipe(dev, endpoint))
@@ -359,7 +361,8 @@ int usb_set_interface(struct usb_device *dev, int interface, int alternate);
 #define usb_pipe_endpdev(pipe)	(((pipe) >> 8) & 0x7ff)
 #define usb_pipeendpoint(pipe)	(((pipe) >> 15) & 0xf)
 #define usb_pipedata(pipe)	(((pipe) >> 19) & 1)
-#define usb_pipeslow(pipe)	(((pipe) >> 26) & 1)
+#define usb_pipespeed(pipe)	(((pipe) >> 26) & 3)
+#define usb_pipeslow(pipe)	(usb_pipespeed(pipe) == USB_SPEED_LOW)
 #define usb_pipetype(pipe)	(((pipe) >> 30) & 3)
 #define usb_pipeisoc(pipe)	(usb_pipetype((pipe)) == PIPE_ISOCHRONOUS)
 #define usb_pipeint(pipe)	(usb_pipetype((pipe)) == PIPE_INTERRUPT)

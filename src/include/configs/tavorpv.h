@@ -85,6 +85,7 @@
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_NET
 #define CONFIG_NET_MULTI
+#define CONFIG_LOOP_WRITE_MTD
 #define MV_ETH_DEVS 			1
 
 #define CONFIG_IPADDR      		192.168.1.101
@@ -183,6 +184,7 @@
 /*-----------------------------------------------------------------------
  * NAND and DFC configuration
  */
+#define CONFIG_NAND_PXA3XX
 #define CONFIG_CMD_NAND 		1
 #define CONFIG_SYS_MAX_NAND_DEVICE	1         /* Max number of NAND devices */
 #define CONFIG_SYS_NAND_BASE		0x43100000

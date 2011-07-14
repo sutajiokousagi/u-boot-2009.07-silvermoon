@@ -54,12 +54,13 @@ static unsigned int usb_debug = DEBUG;
 #define usb_debug 0     /* gcc will remove all the debug code for us */
 #endif
 
-static int u2o_info();
+static int u2o_info(void);
 
 struct mv_usb_dev       the_controller;
 
 extern USB_IMPORT_FUNCS    usbImportFuncs;
 void usb_driver_reset(void);
+extern void *u2o_malloc(unsigned long size);
 
 //////////////////////////////////////////////////////////////////////////////
 // Prototypes
@@ -170,8 +171,7 @@ static int sm_state = kStateZombie;
  * so using '|=' isn't safe as it may ack an interrupt.
  */
 
-void
-u2o_int_hndlr(int irq, void *dev_id)
+void u2o_int_hndlr(void)
 {
 	struct mv_usb_dev *mv_dev = &the_controller;
 
@@ -222,21 +222,42 @@ void u2o_write(unsigned *base, unsigned offset, unsigned value)
 
 static void u2o_phy_dump(unsigned *base)
 {
-#if 0
-	printf(" U2PPLL   0x%x\n", u2o_get(base,  U2PCTL )); 
-	printf(" U2PTX    0x%x\n", u2o_get(base,  U2PTX  ));
-	printf(" U2PRX    0x%x\n", u2o_get(base,  U2PRX  ));
-	printf(" U2IVREF  0x%x\n", u2o_get(base,  U2IVREF));  
-	printf(" U2PT0    0x%x\n", u2o_get(base,  U2PT0  ));
-	printf(" U2PT1    0x%x\n", u2o_get(base,  U2PT1  ));
-	printf(" U2PT2    0x%x\n", u2o_get(base,  U2PT2  ));  
-	printf(" U2PT3    0x%x\n", u2o_get(base,  U2PT3  ));	
-	printf(" U2PT4    0x%x\n", u2o_get(base,  U2PT4  ));  
-	printf(" U2PT5    0x%x\n", u2o_get(base,  U2PT5  ));	
-	printf(" U2PID    0x%x\n", u2o_get(base,  U2PID  ));	
-	printf(" U2PRS    0x%x\n", u2o_get(base,  U2PRS  ));	
-	printf(" U2PMN    0x%x\n", u2o_get(base,  U2PMN  ));	
-	printf(" U2OCG    0x%x\n", u2o_get(base,  U2OCG  ));	
+#ifndef CONFIG_CPU_MONAHANS
+	if (cpu_is_pxa910_168()) {
+		printf(" UTMI_REVISION   0x%x\n", u2o_get(base,  UTMI_REVISION  ));
+		printf(" UTMI_CTRL       0x%x\n", u2o_get(base,  UTMI_CTRL      ));
+		printf(" UTMI_PLL        0x%x\n", u2o_get(base,  UTMI_PLL       ));
+		printf(" UTMI_TX         0x%x\n", u2o_get(base,  UTMI_TX        ));
+		printf(" UTMI_RX         0x%x\n", u2o_get(base,  UTMI_RX        ));
+		printf(" UTMI_IVREF      0x%x\n", u2o_get(base,  UTMI_IVREF     ));
+		printf(" UTMI_T0         0x%x\n", u2o_get(base,  UTMI_T0        ));
+		printf(" UTMI_T1         0x%x\n", u2o_get(base,  UTMI_T1        ));
+		printf(" UTMI_T2         0x%x\n", u2o_get(base,  UTMI_T2        ));
+		printf(" UTMI_T3         0x%x\n", u2o_get(base,  UTMI_T3        ));
+		printf(" UTMI_T4         0x%x\n", u2o_get(base,  UTMI_T4        ));
+		printf(" UTMI_T5         0x%x\n", u2o_get(base,  UTMI_T5        ));
+		printf(" UTMI_RESERVE    0x%x\n", u2o_get(base,  UTMI_RESERVE   ));
+		printf(" UTMI_USB_INT    0x%x\n", u2o_get(base,  UTMI_USB_INT   ));
+		printf(" UTMI_DBG_CTL    0x%x\n", u2o_get(base,  UTMI_DBG_CTL   ));
+		printf(" UTMI_OTG_ADDON  0x%x\n", u2o_get(base,  UTMI_OTG_ADDON ));
+	} else {
+		printf(" U2PRSRVD  0x%x\n", u2o_get(base,  U2PRSRVD  ));
+		printf(" U2PCTRL   0x%x\n", u2o_get(base,  U2PCTRL   ));
+		printf(" U2PPLL    0x%x\n", u2o_get(base,  U2PPLL    ));
+		printf(" U2PTX     0x%x\n", u2o_get(base,  U2PTX     ));
+		printf(" U2PRX     0x%x\n", u2o_get(base,  U2PRX     ));
+		printf(" U2PIVREF  0x%x\n", u2o_get(base,  U2PIVREF  ));
+		printf(" U2PT0     0x%x\n", u2o_get(base,  U2PT0     ));
+		printf(" U2PT1     0x%x\n", u2o_get(base,  U2PT1     ));
+		printf(" U2PT2     0x%x\n", u2o_get(base,  U2PT2     ));
+		printf(" U2PID     0x%x\n", u2o_get(base,  U2PID     ));
+		printf(" U2PINT    0x%x\n", u2o_get(base,  U2PINT    ));
+		printf(" U2PDBGCTL 0x%x\n", u2o_get(base,  U2PDBGCTL ));
+		printf(" U2PCTL1   0x%x\n", u2o_get(base,  U2PCTL1   ));
+		printf(" U2PT3     0x%x\n", u2o_get(base,  U2PT3     ));
+		printf(" U2PT4     0x%x\n", u2o_get(base,  U2PT4     ));
+		printf(" U2PT5     0x%x\n", u2o_get(base,  U2PT5     ));
+	}
 #endif
 }
 
@@ -307,51 +328,81 @@ static void u2o_phy_init(unsigned *base)
 	if (usb_debug)
 		printf("init phy\n\n");
 
-#if 0
-        /* Initialize the USB PHY */
-        u2o_set(base, U2PCTRL, 0x3); // enable PU_PLL & PU
-        u2o_clear(base, U2PT0, 0x8000); // disable FIFO_SQ_RST
-        u2o_write(base, U2PPLL, 0xabc26eeb); // setup parameters
-        u2o_set(base, U2PTX, 0x80000);
-        u2o_write(base, U2PRX, 0x631c82a3);
-        u2o_write(base, U2PIVREF, 0x0000043a);
-        printf("%s: ctrl %x t0 %x pll %x tx %x rx %x ivref %x\n", __func__,
-                u2o_get(base, U2PCTRL), u2o_get(base, U2PT0), u2o_get(base, U2PPLL),
-                u2o_get(base, U2PTX), u2o_get(base, U2PRX), u2o_get(base, U2PIVREF));
-#else
-	u2o_set(base, U2PCTRL, 1<<UTMI_CTRL_INPKT_DELAY_SOF_SHIFT);
-	u2o_set(base, U2PCTRL, 1<<UTMI_CTRL_PLL_PWR_UP_SHIFT);
-	udelay(1000);
-	u2o_set(base, U2PCTRL, 1<<UTMI_CTRL_PWR_UP_SHIFT);
 
-	/* aspen specific*/
+	/* Initialize the USB PHY power */
+	if (cpu_is_pxa910_910()) {
+		u2o_set(base, UTMI_CTRL, (1<<UTMI_CTRL_INPKT_DELAY_SOF_SHIFT)
+				| (1<<UTMI_CTRL_PU_REF_SHIFT));
+	}
+
+	u2o_set(base, UTMI_CTRL, 1<<UTMI_CTRL_PLL_PWR_UP_SHIFT);
+	u2o_set(base, UTMI_CTRL, 1<<UTMI_CTRL_PWR_UP_SHIFT);
+
+	/* UTMI_PLL settings */
+	u2o_clear(base, UTMI_PLL, UTMI_PLL_PLLVDD18_MASK
+			| UTMI_PLL_PLLVDD12_MASK | UTMI_PLL_PLLCALI12_MASK
+			| UTMI_PLL_FBDIV_MASK | UTMI_PLL_REFDIV_MASK
+			| UTMI_PLL_ICP_MASK | UTMI_PLL_KVCO_MASK);
+
+	u2o_set(base, UTMI_PLL, 0xee<<UTMI_PLL_FBDIV_SHIFT
+			| 0xb<<UTMI_PLL_REFDIV_SHIFT | 3<<UTMI_PLL_PLLVDD18_SHIFT
+			| 3<<UTMI_PLL_PLLVDD12_SHIFT | 3<<UTMI_PLL_PLLCALI12_SHIFT
+			| 2<<UTMI_PLL_ICP_SHIFT | 3<<UTMI_PLL_KVCO_SHIFT);
+
+	/* UTMI_TX */
+	u2o_clear(base, UTMI_TX, UTMI_TX_TXVDD12_MASK
+			| UTMI_TX_CK60_PHSEL_MASK | UTMI_TX_IMPCAL_VTH_MASK);
+	u2o_set(base, UTMI_TX, 3<<UTMI_TX_TXVDD12_SHIFT
+			| 4<<UTMI_TX_CK60_PHSEL_SHIFT | 5<<UTMI_TX_IMPCAL_VTH_SHIFT);
+
+	/* UTMI_RX */
+	u2o_clear(base, UTMI_RX, UTMI_RX_SQ_THRESH_MASK
+			| UTMI_REG_SQ_LENGTH_MASK);
 	if (cpu_is_pxa910_168())
-		u2o_write(base, 0x3C, 1);  /* Turn on UTMI PHY OTG extension */
+		u2o_set(base, UTMI_RX, 7<<UTMI_RX_SQ_THRESH_SHIFT
+				| 2<<UTMI_REG_SQ_LENGTH_SHIFT);
+	else
+		u2o_set(base, UTMI_RX, 0xa<<UTMI_RX_SQ_THRESH_SHIFT
+				| 2<<UTMI_REG_SQ_LENGTH_SHIFT);
 
-	u2o_clear(base, U2PPLL, UTMI_PLL_FBDIV_MASK | UTMI_PLL_REFDIV_MASK);
-	u2o_set(base, U2PPLL, 0xee<<UTMI_PLL_FBDIV_SHIFT | 0xb<<UTMI_PLL_REFDIV_SHIFT);
-	u2o_set(base, U2PTX, 0x80000);
+	/* UTMI_IVREF */
+	if (cpu_is_pxa910_168())
+		/* fixing Microsoft Altair board interface with NEC hub issue -
+		 * Set UTMI_IVREF from 0x4a3 to 0x4bf */
+		u2o_write(base, UTMI_IVREF, 0x4bf);
 
 	/* calibrate */
-	while((u2o_get(base, U2PPLL) & PLL_READY) == 0);
+	count = 10000;
+	while(((u2o_get(base, UTMI_PLL) & PLL_READY)==0) && count--);
+	if (count <= 0) printf("%s %d: calibrate timeout, UTMI_PLL %x\n",
+		__func__, __LINE__, u2o_get(base, UTMI_PLL));
 
-	/* toggle VCOCAL_START bit of U2PPLL */
+	/* toggle VCOCAL_START bit of UTMI_PLL */
 	udelay(200);
-	u2o_set(base, U2PPLL, VCOCAL_START);
+	u2o_set(base, UTMI_PLL, VCOCAL_START);
 	udelay(40);
-	u2o_clear(base, U2PPLL, VCOCAL_START);
+	u2o_clear(base, UTMI_PLL, VCOCAL_START);
 
-	/* toggle REG_RCAL_START bit of U2PTX */
+	/* toggle REG_RCAL_START bit of UTMI_TX */
 	udelay(200);
-	u2o_set(base, U2PTX, REG_RCAL_START);
-	udelay(400);
-	u2o_clear(base, U2PTX, REG_RCAL_START);
+	u2o_set(base, UTMI_TX, REG_RCAL_START);
+	udelay(40);
+	u2o_clear(base, UTMI_TX, REG_RCAL_START);
+	udelay(200);
 
 	/* make sure phy is ready */
-	while((u2o_get(base, U2PPLL) & PLL_READY) == 0);
-#endif
+	count = 1000;
+	while(((u2o_get(base, UTMI_PLL) & PLL_READY)==0) && count--);
+	if (count <= 0) printf("%s %d: calibrate timeout, UTMI_PLL %x\n",
+		__func__, __LINE__, u2o_get(base, UTMI_PLL));
 
-	if (usb_debug) u2o_phy_dump(base);
+	if (cpu_is_pxa910_168()) {
+		u2o_set(base, UTMI_RESERVE, 1<<5);
+		u2o_write(base, UTMI_OTG_ADDON, 1);  /* Turn on UTMI PHY OTG extension */
+	}
+
+	if (usb_debug)
+		u2o_phy_dump(base);
 }
 #endif
 
@@ -647,11 +698,13 @@ u2o_disable(void)
 }
 
 /*-------------------------------------------------------------------------*/
+#if 0
 static void u2o_soft_dis(int enable)
 {
 	if (usb_debug)
 		printf("%s enable %d\n\n", __func__, enable);
 }
+#endif
 
 /* CHIP ID: 
  * 	Z0: 0x00a0c910
@@ -697,7 +750,7 @@ int u2o_enable(void)
 	mv_dev->regbase = (unsigned *)U2O_REG_BASE; 
 	mv_dev->phybase = (unsigned *)U2O_PHY_BASE;
 	if (usb_debug)
-		printf("%s PMUA_USB_CLK_RES_CTRL 0x%x regbase %x phybase %x\n", __func__, 
+		printf("%s PMUA_USB_CLK_RES_CTRL 0x%x regbase %p phybase %p\n", __func__,
 		  __raw_readl(PMUA_USB_CLK_RES_CTRL), mv_dev->regbase, mv_dev->phybase);
 	/* init the UTMI transceiver */
 	u2o_phy_init(mv_dev->phybase);
@@ -786,9 +839,9 @@ void u2o_start(void)
 {
 	struct mv_usb_dev *mv_dev = &the_controller;
 	
-	ep0_send_buf = u2o_malloc(0x1000);
-	ep1_buf = u2o_malloc(0x1000);
-	ep2_buf = u2o_malloc(0x1000);
+	ep0_send_buf = (int *)u2o_malloc(0x1000);
+	ep1_buf = (int *)u2o_malloc(0x1000);
+	ep2_buf = (int *)u2o_malloc(0x1000);
 
 	if (usb_debug)
 		printf("ep1_buf %p ep2_buf %p ep0_send_buf %p\n", 
@@ -804,7 +857,7 @@ static void u2o_dump_info(void)
 	mv_usb_dump();
 }
 
-static int u2o_info(int argc, char *argv[])
+static int u2o_info(void)
 {
 	struct mv_usb_dev *mv_dev = &the_controller;
 

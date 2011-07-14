@@ -18,6 +18,9 @@
 #ifdef   CONFIG_TTC_DKB
 #include <configs/ttc_dkb.h>
 #endif
+#ifdef   CONFIG_GENERIC_DKB
+#include <configs/generic_dkb.h>
+#endif
 #ifdef	 CONFIG_ZYLONITE2
 #include <configs/zylonite2.h>
 #endif
@@ -40,18 +43,15 @@
 #include "pxa_usb.h"
 #include "mv_u2o_ctl.h"
 
-static int usb_rsize=64;
-static int usb_wsize=64;
-
 /* cable connection */
+extern int req_pending;
 extern int usb_connected;
 extern int usb_speed;
 
 /* receive buffer management */
-static char rx_buf[2][ETH_BUF_SIZE];
+static volatile uchar rx_buf[2][ETH_BUF_SIZE];
 static int  rx_size = 0;
 static int  rx_done = 0 ;
-static u16 rxIdx;		/* index of the current RX buffer */
 
 /* transmit buffer management */
 static int tx_done = 0 ;
@@ -60,6 +60,7 @@ u16 usb_vendor_id = 0x8086;
 u16 usb_product_id = 0x07d3;
 
 extern void u2o_start(void);
+extern void u2o_int_hndlr(void);
 
 static void usb_eth_tx_callback(int flag, int size)
 {
@@ -68,8 +69,6 @@ static void usb_eth_tx_callback(int flag, int size)
 
 static void usb_eth_rx_callback(int flag, int size)
 {
-	int left, i;
-
 #ifdef DEBUG
 	printf("%s flag %d size %d left %d rx_done %d rx_size %d\n", 
 		__func__, flag, size, left, rx_done, rx_size); 
@@ -87,10 +86,8 @@ static void usb_eth_rx_callback(int flag, int size)
 		rx_size = 0;
 	}
 
-	memcpy(rx_buf[0], rx_buf[1], size);
+	memcpy((void *)rx_buf[0], (void *)rx_buf[1], size);
 	rx_size += size;
-
-done:
 	rx_done = 1;
 
 #ifdef DEBUG
@@ -103,7 +100,7 @@ done:
 	NetReceive(rx_buf[0], size);
 
 	/* setup to receive */
-	ep2_recv(rx_buf[1], ETH_BUF_SIZE, usb_eth_rx_callback);
+	ep2_recv((char *)rx_buf[1], ETH_BUF_SIZE, usb_eth_rx_callback);
 
 	return;
 }
@@ -116,7 +113,7 @@ void usb_driver_speed(int speed)
 	ep_desc_t *ep;
 
 	cfg = (config_desc_t*) (pdesc->cdb);
-	intf = (config_desc_t *)(cfg + 1);
+	intf = (intf_desc_t *)((config_desc_t *)(cfg + 1));
 	ep = (ep_desc_t *) (intf + 1);
 	
 	if( speed == USB_SPEED_HIGH ){
@@ -195,7 +192,7 @@ void ep2_begin(void)
 {
 	/* setup to receive */
 	if(usb_connected) {
-		ep2_recv(rx_buf[1], ETH_BUF_SIZE, usb_eth_rx_callback);
+		ep2_recv((char *)rx_buf[1], ETH_BUF_SIZE, usb_eth_rx_callback);
 	}
 }
 
@@ -214,7 +211,7 @@ int check_usb_connection(int timeout)
 	start = get_ticks();
 	while (!usb_connected) {
 		//if ( __raw_readl(ICU_INT_STATUS_1) & (1<<(44-32)) ) {
-			u2o_int_hndlr(0x11, 0);
+			u2o_int_hndlr();
 		//}
 
 		if (timeout && (start + timeout *CONFIG_SYS_HZ) < get_ticks()) {
@@ -225,7 +222,7 @@ int check_usb_connection(int timeout)
 
 	while ( cnt < 0x1000) {
 		//if ( __raw_readl(ICU_INT_STATUS_1) & (1<<(44-32)) ) {
-			u2o_int_hndlr(0x11, 0);
+			u2o_int_hndlr();
 		//	cnt = 0;
 		//}
 		cnt ++;
@@ -259,19 +256,17 @@ static int usb_eth_init(struct eth_device *dev, bd_t *bd)
 			s = (*e) ? e + 1 : e;
 	}
 
+	v_mac = &v_env_mac[0];
 	memcpy (bd->bi_enetaddr, v_mac, 6);	/* update global address to match env (allows env changing) */
 	memcpy(dev->enetaddr, bd->bi_enetaddr, 6);
 
 	return 0;
 }
 
-static int usb_eth_halt(struct eth_device *dev, bd_t *bd)
+static void usb_eth_halt(struct eth_device *dev)
 {
+	return;
 }
-static int loop=0;
-
-extern int req_pending;
-void dump_buffer(char *buf, unsigned length);
 
 static int usb_eth_rx(struct eth_device *dev)
 {
@@ -282,7 +277,7 @@ static int usb_eth_rx(struct eth_device *dev)
 
 	do{
 		//if ( __raw_readl(ICU_INT_STATUS_1) & (1<<(44-32)) ) {
-			u2o_int_hndlr(0x11, 0);
+			u2o_int_hndlr();
 		//	i=0;
 		//}
 
@@ -312,7 +307,7 @@ static int usb_eth_tx(struct eth_device *dev, volatile void *packet,
 
 	tx_done = 0;
 	do {
-		ret = ep1_send(packet, length, usb_eth_tx_callback);
+		ret = ep1_send((char *)packet, length, usb_eth_tx_callback);
 	
 		i = 10000;
 		do {

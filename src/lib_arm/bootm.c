@@ -114,7 +114,7 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
 #endif
 
 	/* we assume that the kernel is in place */
-	printf ("\nStarting kernel using machid %d (0x%x) ...\n\n", machid, machid );
+	printf ("\nStarting kernel ...\n\n");
 
 #ifdef CONFIG_USB_DEVICE
 	{

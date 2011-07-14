@@ -2566,20 +2566,38 @@ tavorevb_config :       unconfig
 aspenite_config:	unconfig
 	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 aspenite  pxa pxa168
 
+aspenite_lcd_config:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 aspenite  pxa pxa168
+
+aspenite_emmc_config:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 aspenite  pxa pxa168
+
 zylonite2_config:       unconfig
 	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 aspenite  pxa pxa168
 
 avengers_config:	unconfig
 	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 avengers  pxa pxa168
 
+ipcam_config:		unconfig
+	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 avengers  pxa pxa168
+
+edge_config:		unconfig
+	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 avengers  pxa pxa168
+
 ttc_dkb_config	:	unconfig
 	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 ttc_dkb   pxa pxa168
+
+td_dkb_config	:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 td_dkb   pxa pxa168
 
 wayland_config:		unconfig
 	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 wayland  pxa pxa168
 
 teton_bga_config:       unconfig
 	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 teton_bga pxa pxa168
+
+generic_dkb_config	: unconfig
+	@$(MKCONFIG) $(@:_config=) arm 88SV331xV5 generic_dkb   pxa pxa168
 
 #########################################################################
 ## ARM92xT Systems
@@ -2945,8 +2963,17 @@ zylonite_config :
 tavorpv_config :
 	@$(MKCONFIG) $(@:_config=) arm pxa tavorevb3 pxa
 
-tavorevb3_config :
+tavorevb3_config :	unconfig
 	@$(MKCONFIG) $(@:_config=) arm pxa tavorevb3 pxa
+
+tavorevb3_emmc_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm pxa tavorevb3 pxa
+
+saarb_config :
+	@$(MKCONFIG) $(@:_config=) arm pxa saarb pxa
+
+saarb_emmc_config :
+	@$(MKCONFIG) $(@:_config=) arm pxa saarb pxa
 
 #########################################################################
 ## ARM1136 Systems
@@ -2987,6 +3014,12 @@ smdk6400_config	:	unconfig
 		$(MKCONFIG) $(@:_noUSB_config=) arm arm1176 smdk6400 samsung s3c64xx;	\
 	fi
 	@echo "CONFIG_NAND_U_BOOT = y" >> $(obj)include/config.mk
+#########################################################################
+## 88SV581xV6 Systems
+#########################################################################
+mg1_bigbrother_config	:	unconfig
+	cp $(obj)board/pxa/bigbrother/u-boot.mg1 $(obj)board/pxa/bigbrother/u-boot.lds ;
+	@$(MKCONFIG) $(@:_config=) arm 88SV581xV6 bigbrother pxa pxa968
 
 #========================================================================
 # i386

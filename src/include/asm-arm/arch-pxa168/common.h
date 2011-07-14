@@ -43,6 +43,7 @@
 
 #define __REG_PXA910(x)	(*((volatile u32 *)(x)))
 #define BU_U32            unsigned int
+#define BU_REG_READ(x)    (*(volatile BU_U32 *)(x))
 #define BU_REG_WRITE(x,y) ((*(volatile BU_U32 *)(x)) = y )
 
 typedef int wait_queue_head_t; 
@@ -56,7 +57,6 @@ typedef int spinlock_t;
 #define clk_enable(...)	
 #define clk_disable(...)
 #define DEBUG(...)
-#define del_mtd_device(...)
 
 static inline int __decalare_return(void)
 {
@@ -399,6 +399,12 @@ unsigned long clk_get_rate(struct clk * clk);
 	({                                              		\
 	 unsigned int id = read_cpuid(CPUID_ID); 			\
 	 __cpu_is_pxa910_168(id);                        		\
+	 })
+#define cpu_is_pxa920_z2()                                 		\
+	({                                              		\
+	 unsigned int chip_id = __raw_readl(0xd4282c00);		\
+	 unsigned int id = read_cpuid(CPUID_ID); 			\
+	 __cpu_is_pxa910(id) && ((chip_id & 0x00fff000) == 0x0070c000);	\
 	 })
 
 #define DMA_BIT_MASK(n) (((n) == 64) ? ~0ULL : ((1ULL<<(n))-1))

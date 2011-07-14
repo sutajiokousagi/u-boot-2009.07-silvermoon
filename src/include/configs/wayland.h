@@ -46,7 +46,7 @@
 #define CONFIG_SYS_MEMTEST_END        	0x00F00000
 
 #define CONFIG_SYS_HZ   		(3250000)      /* KV - Timer 0 is clocked at 3.25 MHz */
-#define CONFIG_SYS_TIMERBASE 		0xD4014000 
+#define CONFIG_SYS_TIMERBASE 		0xD4014000
 #define CONFIG_DISPLAY_BOARDINFO
 
 #define CONFIG_MISC_INIT_R         	1   /* call misc_init_r during start up */
@@ -56,6 +56,7 @@
  */
 #define CONFIG_SYS_MALLOC_LEN      	(CONFIG_SYS_ENV_SIZE + 512*1024)
 #define CONFIG_SYS_GBL_DATA_SIZE   	128   /* size in bytes reserved for initial data */
+#define CONFIG_CMD_MEMORY
 
 /*
  *  Configuration
@@ -76,13 +77,14 @@
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_NET
 #define CONFIG_NET_MULTI
+#define CONFIG_LOOP_WRITE_MTD
 #define MV_ETH_DEVS 			1
 
 #define CONFIG_IPADDR      		192.168.1.101
 
 #define CONFIG_SERVERIP    		192.168.1.100
 
-#define ETHADDR            		"00:00:5A:9F:6D:82"
+#define CONFIG_ETHADDR			"00:00:5A:9F:6D:82"
 
 /* enable passing of ATAGs  */
 #define CONFIG_CMDLINE_TAG       	1
@@ -107,7 +109,32 @@
 #define CONFIG_SYS_INITRD_SIZE      	"400000"
 #undef  CONFIG_BOOTARGS
 
+/*-----------------------------------------------------------------------
+ * MMC configuration
+ */
+#define CONFIG_MMC		1
+//#define CONFIG_MMC3		1
+
+#if defined(CONFIG_MMC) || defined(CONFIG_MMC3)
+#define CONFIG_PXASDH		1
+#define CONFIG_CMD_MMC		1
+#define CONFIG_GENERIC_MMC	1
+#define CONFIG_DOS_PARTITION	1
+#define CONFIG_CMD_FAT		1
+#define CONFIG_CMD_EXT2		1
+#endif
+
+#ifndef CONFIG_MMC3
+#define CONFIG_SYS_MMC_BASE	0xd4280000
+#else
+#define CONFIG_SYS_MMC_BASE	0xd427E000	/* Default MMC Support on MMC1 Interface */
+#endif
+
+#ifndef CONFIG_MMC3
 #define CONFIG_BOOTDELAY        	10
+#else
+#define CONFIG_BOOTDELAY        	-1
+#endif
 
 #if (CONFIG_BOOTDELAY >= 0)
 
@@ -167,10 +194,15 @@
 #define PHYS_SDRAM_1_SIZE       	0x04000000   /* 64 MB */
 #define PHYS_SDRAM_SIZE_DEC     	64
 #define CONFIG_SYS_ENV_SIZE            	0x10000   /* Total Size of Environment Sector */
+#ifndef CONFIG_MMC3
 #define	CONFIG_ENV_IS_IN_NAND		1
-#define CMD_SAVEENV			1
+#else
+#define	CONFIG_ENV_IS_NOWHERE		1
+#endif
 #define CONFIG_SYS_NO_FLASH		1
+#ifndef CONFIG_MMC3
 #define CONFIG_BBM			1
+#endif
 
 /*-----------------------------------------------------------------------
  * cpuid configuration
@@ -180,13 +212,16 @@
 /*-----------------------------------------------------------------------
  * NAND and DFC configuration
  */
+#ifndef CONFIG_MMC3
+#define CONFIG_NAND_PXA3XX
 #define CONFIG_CMD_NAND 		1
 #define CONFIG_SYS_MAX_NAND_DEVICE	1         /* Max number of NAND devices */
-#define CONFIG_SYS_NAND_BASE		0x0
+#define CONFIG_SYS_NAND_BASE		0xD4283000
 #define CONFIG_SYS_ONENAND_BASE 	0x80000000  /* configure for ttc */
+#endif
 #define CONFIG_USB_ETH
-#define CONFIG_U2O_REG_BASE             0xd4208000
-#define CONFIG_U2O_PHY_BASE             0xd4207000
+#define CONFIG_U2O_REG_BASE		0xd4208000
+#define CONFIG_U2O_PHY_BASE		0xd4207000
 
 #endif
 /* __CONFIG_H */

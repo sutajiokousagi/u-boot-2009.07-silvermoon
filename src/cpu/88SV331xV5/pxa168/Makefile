@@ -26,9 +26,10 @@ include $(TOPDIR)/config.mk
 LIB	= $(obj)lib$(SOC).a
 
 COBJS	= timer.o mfp.o
+COBJS-${CONFIG_USB_EHCI_PXA168}	+= pxa168_u2h.o
 
 SRCS	:= $(START:.o=.S) $(SOBJS:.o=.S) $(COBJS:.o=.c)
-OBJS	:= $(addprefix $(obj),$(COBJS) $(SOBJS))
+OBJS	:= $(addprefix $(obj),$(COBJS) $(SOBJS) $(COBJS-y))
 START	:= $(addprefix $(obj),$(START))
 
 all:	$(obj).depend $(LIB)

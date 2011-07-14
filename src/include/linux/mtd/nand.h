@@ -178,6 +178,8 @@ typedef enum {
 #define NAND_NO_READRDY		0x00000100
 /* Chip does not allow subpage writes */
 #define NAND_NO_SUBPAGE_WRITE	0x00000200
+/* If use marvell bbm scheme, mtd should report no error to the up level */
+#define BBT_RELOCATION_IFBAD	0x00000400
 
 
 /* Options valid for Samsung large page devices */

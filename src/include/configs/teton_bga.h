@@ -46,7 +46,7 @@
 #define CONFIG_SYS_MEMTEST_END        	0x00F00000
 
 #define CONFIG_SYS_HZ   		(3250000)      /* KV - Timer 0 is clocked at 3.25 MHz */
-#define CONFIG_SYS_TIMERBASE 		0xD4014000 
+#define CONFIG_SYS_TIMERBASE 		0xD4014000
 #define CONFIG_DISPLAY_BOARDINFO
 
 #define CONFIG_MISC_INIT_R         	1   /* call misc_init_r during start up */
@@ -76,6 +76,7 @@
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_NET
 #define CONFIG_NET_MULTI
+#define CONFIG_LOOP_WRITE_MTD
 #define MV_ETH_DEVS 			1
 
 #define CONFIG_IPADDR      		192.168.1.101
@@ -180,11 +181,14 @@
 /*-----------------------------------------------------------------------
  * NAND and DFC configuration
  */
+#define CONFIG_NAND_PXA3XX
 #define CONFIG_CMD_NAND 		1
 #define CONFIG_SYS_MAX_NAND_DEVICE	1         /* Max number of NAND devices */
-#define CONFIG_SYS_NAND_BASE		0x0
+#define CONFIG_SYS_NAND_BASE		0xD4283000
 #define CONFIG_SYS_ONENAND_BASE 	0x80000000  /* configure for ttc */
 #define CONFIG_USB_ETH
+#define CONFIG_U2O_REG_BASE             0xd4208000
+#define CONFIG_U2O_PHY_BASE             0xd4207000
 
 #endif
 /* __CONFIG_H */

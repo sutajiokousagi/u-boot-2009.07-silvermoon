@@ -43,7 +43,7 @@ downcase(char *str)
 	}
 }
 
-block_dev_desc_t *cur_dev = NULL;
+static  block_dev_desc_t *cur_dev = NULL;
 static unsigned long part_offset = 0;
 static int cur_part = 1;
 

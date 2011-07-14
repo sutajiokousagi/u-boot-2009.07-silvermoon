@@ -199,36 +199,6 @@
 #if defined(CHUMBY_CONFIGNAME_silvermoon_aspen)
 #define CONFIG_BOOTCOMMAND          "nand read 0x500000 0x920000 0x300000; bootz 0x500000"
 #else
-// mmc read is set by chumbystart on exit, e.g.
-// setenv chumbyboot3 mmc read 0 0x500000 0xc04 0x1e00
-// setenv chumbyboot4 bootz 0x500000
-// Device offsets for config area and chumbystart are be passed in from
-/****
-src/map-util --blocks --hex --id config config/map-silvermoon_sd doffset
-CHUMBY_DOFFSET_config 0x00000064
-src/map-util --blocks --hex --id config config/map-silvermoon_sd length
-CHUMBY_LENGTH_config 0x00000020
-src/map-util --blocks --hex --id Chst config/map-silvermoon_sd doffset
-CHUMBY_DOFFSET_Chst 0x00000804
-src/map-util --blocks --hex --id Chst config/map-silvermoon_sd length
-CHUMBY_LENGTH_Chst 0x00000200
-src/map-util --blocks --hex --id ubfb config/map-silvermoon_sd doffset
-CHUMBY_DOFFSET_ubfb 0x00000a04
-src/map-util --blocks --hex --id ubfb config/map-silvermoon_sd length
-// We won't actually use this - we'll read a 128000 byte slice which is 0xfa sectors 7.5x
-CHUMBY_LENGTH_ubfb 0x00000200
-// For testing with SPINOR boot, we are loading u-boot from offset 0 which means
-// 80k bytes = 160 blocks = 0xa0 blocks are destroyed
-// The start of the u-boot data at 0x10800 (block 0x00000084) gets clobbered also
-// Temporarily, we'll write the config block to 0xc4 (196 decimal blocks) which is 0x18800 bytes
-// dd if=output/image-links-silvermoon_sd/u-bt of=/dev/sdc bs=512
-// dd if=output/config-silvermoon_sd.img of=/dev/sdc bs=512 seek=196
-****/
-//#define TEMPORARY_HACK_FOR_SPINOR_20090917
-#ifdef TEMPORARY_HACK_FOR_SPINOR_20090917
-#undef CHUMBY_DOFFSET_config
-#define CHUMBY_DOFFSET_config "0xc4"
-#endif
 
 #define CONFIG_BOOTCOMMAND                                      \
     /* Init SD card */                                          \
@@ -237,22 +207,19 @@ CHUMBY_LENGTH_ubfb 0x00000200
     /* Test to see which Boot Partition is active */            \
     "PART=mmcblk0p2; PARTNAME=rfsA; KF=2; KB=krnA; "            \
     " ;"                                                        \
-    /* Check for debranding */                                  \
-    "cbrand ; "                                                 \
-    " ;"                                                        \
     /* Have a pretty, flashy startup screen */                  \
     /* Draw an image to the screen */                           \
     "echo \"Drawing something to the screen...\" ;"             \
     "snow init ${BP} ;"                                         \
     " ;"                                                        \
+    /* Load the FPGA, which lets us draw to the screen */       \
     "echo \"Loading FPGA configuration.\" ;"                    \
     "ext2load mmc 0:2 ${default_load_addr} /lib/firmware/hdmi_720p.bin ;" \
     "fpga load 0 ${default_load_addr} 340604 ; "                \
     " ;"                                                        \
     "echo \"Loading boot logo.\" ;"                             \
     "ext2load mmc 0:2 ${default_load_addr} /boot/logo.raw.gz ;" \
-    "unzip ${default_load_addr} 0x02000000 ;"                   \
-    "cp.l 0x02000000 ${lcdbase} 0x70800 ;"                      \
+    "unzip ${default_load_addr} ${lcdbase} ;"                   \
     " ;"                                                        \
     /* Wait for the user to press Control-C */                  \
     "echo \"Press Control-C to enter a shell.\" ;"              \

@@ -15,7 +15,7 @@
 #if defined(CONFIG_CMD_NET)
 
 #define WELL_KNOWN_PORT	69		/* Well known TFTP port #		*/
-#define TIMEOUT		5000UL		/* Millisecs to timeout for lost pkt */
+#define TIMEOUT		50000UL		/* Millisecs to timeout for lost pkt */
 #ifndef	CONFIG_NET_RETRY_COUNT
 # define TIMEOUT_COUNT	10		/* # of timeouts before giving up  */
 #else
@@ -36,6 +36,7 @@
 
 static ulong TftpTimeoutMSecs = TIMEOUT;
 static int TftpTimeoutCountMax = TIMEOUT_COUNT;
+static int loop_offset;
 
 /*
  * These globals govern the timeout behavior when attempting a connection to a
@@ -116,6 +117,8 @@ mcast_cleanup(void)
 
 #endif	/* CONFIG_MCAST_TFTP */
 
+extern int mtd_direct_write;
+int mtd_burn_callback(ulong load_addr, int *loop_offset, int force);
 static __inline__ void
 store_block (unsigned block, uchar * src, unsigned len)
 {
@@ -138,6 +141,20 @@ store_block (unsigned block, uchar * src, unsigned len)
 		rc = flash_write ((char *)src, (ulong)(load_addr+offset), len);
 		if (rc) {
 			flash_perror (rc);
+			NetState = NETLOOP_FAIL;
+			return;
+		}
+	}
+	else
+#elif defined CONFIG_LOOP_WRITE_MTD
+	int ret;
+
+	if (mtd_direct_write) {
+		(void)memcpy((void *)(load_addr + loop_offset), src, len);
+		loop_offset += len;
+		ret = mtd_burn_callback(load_addr, &loop_offset, 0);
+
+		if (ret){
 			NetState = NETLOOP_FAIL;
 			return;
 		}
@@ -439,6 +456,11 @@ TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 			 */
 			puts ("\ndone\n");
 			NetState = NETLOOP_SUCCESS;
+
+#ifdef CONFIG_LOOP_WRITE_MTD
+			if (loop_offset != 0)
+				mtd_burn_callback(load_addr, &loop_offset, 1);
+#endif
 		}
 		break;
 
@@ -536,6 +558,7 @@ TftpStart (void)
 
 	puts ("Loading: *\b");
 
+	loop_offset = 0;
 	TftpTimeoutMSecs = TftpRRQTimeoutMSecs;
 	TftpTimeoutCountMax = TftpRRQTimeoutCountMax;
 

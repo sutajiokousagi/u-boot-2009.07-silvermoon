@@ -41,6 +41,11 @@ short console_col;
 short console_row;
 
 
+#define GPIO_REGS_BASE  (0xD4019000)
+#define GPIO2_REGS_BASE (GPIO_REGS_BASE+0x8)
+#define GPIO2_PSR_BASE (GPIO2_REGS_BASE+0x18)
+#define GPIO2_SDR_BASE  (GPIO2_REGS_BASE+0x54)
+
 
 
 #define PXA168_LCD_BASE 0xD420B000

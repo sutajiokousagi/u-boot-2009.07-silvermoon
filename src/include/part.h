@@ -49,6 +49,16 @@ typedef struct block_dev_desc {
 				       unsigned long start,
 				       lbaint_t blkcnt,
 				       const void *buffer);
+#ifdef CONFIG_GENERIC_MMC
+	int		initialized;
+	unsigned long	(*block_erase)(int dev,
+				       unsigned long start,
+				       lbaint_t blkcnt);
+	unsigned long	(*switch_part)(int dev,
+				       unsigned int part_num);
+	unsigned long	(*switch_boot)(int dev,
+				       unsigned int part_num);
+#endif
 	void		*priv;		/* driver private struct pointer */
 }block_dev_desc_t;
 

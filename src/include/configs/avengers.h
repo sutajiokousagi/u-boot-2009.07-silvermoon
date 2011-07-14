@@ -38,6 +38,7 @@
 #define CONFIG_CPU_PXA910_168		1 /* pxa168 SOC */
 #define CONFIG_PXAXXX      		1 /*  pxa family */
 #define CONFIG_AVENGERS			1
+#define AVENGERS_BOARD_ABOVE_1P6F	/* default version is above 1p6f */
 
 #define CONFIG_SYS_BOARD_NAME		"88SV331xV5 based PXAxxx"
 #define CONFIG_SYS_VENDOR_NAME     	"MARVELL"
@@ -48,6 +49,7 @@
 #define CONFIG_SYS_HZ   		(3250000)      /* KV - Timer 0 is clocked at 3.25 MHz */
 #define CONFIG_SYS_TIMERBASE 		0xD4014000 
 #define CONFIG_DISPLAY_BOARDINFO
+#define CONFIG_CMD_MEMORY
 
 #define CONFIG_MISC_INIT_R         	1   /* call misc_init_r during start up */
 
@@ -61,7 +63,12 @@
  *  Configuration
  */
 #define CONFIG_AUTO_COMPLETE
+#ifdef AVENGERS_BOARD_ABOVE_1P6F
+#define CONFIG_CONS_INDEX     		2
+#else
 #define CONFIG_CONS_INDEX     		1
+#endif
+
 #undef  CONFIG_SERIAL_SOFTWARE_FIFO
 #define CONFIG_SYS_NS16550
 #define CONFIG_SYS_NS16550_SERIAL
@@ -70,12 +77,14 @@
 #define CONFIG_BAUDRATE        		115200
 #define CONFIG_SYS_BAUDRATE_TABLE     	{ 9600, 19200, 38400, 57600, 115200 }
 #define CONFIG_SYS_NS16550_COM1       	0xD4017000
+#define CONFIG_SYS_NS16550_COM2       	0xD4018000
 
 #define CONFIG_SHOW_BOOT_PROGRESS
 
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_NET
-#define CONFIG_NETCONSOLE
+#define CONFIG_LOOP_WRITE_MTD
+//#define CONFIG_NETCONSOLE
 #define CONFIG_NET_MULTI
 #define MV_ETH_DEVS 			1
 
@@ -108,13 +117,16 @@
 #define CONFIG_SYS_INITRD_SIZE      	"400000"
 #undef  CONFIG_BOOTARGS
 
-#define CONFIG_BOOTDELAY        	10
+#define CONFIG_BOOTDELAY        	3
+#define CONFIG_KEY_TO_DETECT		3
+#define CONFIG_PREBOOT			"keyboot"
 
 #if (CONFIG_BOOTDELAY >= 0)
 
 /* boot arguments" */
 #define CONFIG_ONENANDBOOT	     	"onenand read 0x500000 0x920000 0x300000"
-#define CONFIG_NANDBOOT 	     	"nand device 1; nand read 0x500000 0x80000 0x280000"
+#define CONFIG_NANDBOOT 	     	"nand device 0; nand read 0x500000 0x100000 0x300000"
+#define CONFIG_MAINTENT_BOOT		"nand device 0; nand read 0x500000 0x400000 0x300000"
 #define CONFIG_BOOTCOMMAND      	"setenv autoboot boot; bootz 0x500000; setenv autoboot none"
 #define CONFIG_ROOTPATH   		/tftpboot/rootfs_arm
 
@@ -169,22 +181,49 @@
 #define PHYS_SDRAM_1_SIZE       	0x08000000   /* 128 MB */
 #define PHYS_SDRAM_SIZE_DEC     	128
 #define CONFIG_SYS_ENV_SIZE            	0x10000   /* Total Size of Environment Sector */
-#define	CONFIG_ENV_IS_IN_NAND		1
-#define CMD_SAVEENV			1
 #define CONFIG_SYS_NO_FLASH		1
 #define CONFIG_BBM			1
+
+/*---------------------------------------------
+ * SPI NOR configuration
+ */
+#ifdef AVENGERS_BOARD_ABOVE_1P6F
+#define CONFIG_PXA3XX_SPI
+#if defined(CONFIG_PXA3XX_SPI)
+#define CONFIG_SSP_CLK			6500000
+#define CONFIG_SYS_SSP_BASE		0xD401C000
+#define CONFIG_ENV_SPI_BUS		0
+#define CONFIG_ENV_SPI_CS		110
+#define CONFIG_ENV_SPI_MAX_HZ		26000
+#define CONFIG_ENV_SPI_MODE		0
+#define CONFIG_CMD_SF
+#define CONFIG_SPI_FLASH
+#define SF_PROBE_ONCE_FOR_COMMAND
+#define CONFIG_PROBE_FLASH_INIT
+#define CONFIG_SPI_FLASH_STMICRO	1
+#define CONFIG_SPI_FLASH_MACRONIX	1
+#define CONFIG_SPI_COPYBACK_NAND
+#endif /*CONFIG_PXA3XX_SPI*/
+#define CONFIG_ENV_IS_IN_SPI_FLASH      1
+#define CONFIG_ENV_SECT_SIZE            0x10000 /* 64K */
+
+#else
+#define	CONFIG_ENV_IS_IN_NAND		1
+#endif /*AVENGERS_BOARD_ABOVE_1P6F*/
 
 /*-----------------------------------------------------------------------
  * NAND and DFC configuration
  */
+#define CONFIG_NAND_PXA3XX
 #define CONFIG_CMD_NAND 		1
 #define CONFIG_SYS_MAX_NAND_DEVICE	2         /* Max number of NAND devices */
 #define CONFIG_SYS_NAND_BASE		0xD4283000
+#define CONFIG_NAND_INIT
 
 /*-----------------------------------------------------------------------
  * ONENAND configuration
  */
-#define CONFIG_CMD_ONENAND 		1
+//#define CONFIG_CMD_ONENAND 		1
 #define CONFIG_SYS_ONENAND_BASE 	0x80000000  /* configure for ttc */
 #define CONFIG_USB_ETH
 #define CONFIG_U2O_REG_BASE		0xd4208000

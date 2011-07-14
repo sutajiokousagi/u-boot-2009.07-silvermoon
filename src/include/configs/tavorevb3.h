@@ -63,6 +63,7 @@
  */
 #define CONFIG_SYS_MALLOC_LEN      	(CONFIG_SYS_ENV_SIZE + 512*1024)
 #define CONFIG_SYS_GBL_DATA_SIZE   	128   /* size in bytes reserved for initial data */
+#define CONFIG_CMD_MEMORY
 
 /*
  *  Configuration
@@ -83,6 +84,7 @@
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_NET
 #define CONFIG_NET_MULTI
+#define CONFIG_LOOP_WRITE_MTD
 #define MV_ETH_DEVS 			1
 
 #define CONFIG_IPADDR      		192.168.1.101
@@ -181,6 +183,7 @@
 /*-----------------------------------------------------------------------
  * NAND and DFC configuration
  */
+#define CONFIG_NAND_PXA3XX
 #define CONFIG_CMD_NAND 		1
 #define CONFIG_SYS_MAX_NAND_DEVICE	1         /* Max number of NAND devices */
 #define CONFIG_SYS_NAND_BASE		0x43100000
@@ -210,5 +213,20 @@
 
 #define CONFIG_NET_RETRY_COUNT 		10000
 
+#define CONFIG_CMD_MMC
+#define CONFIG_MMC
+#define CONFIG_GENERIC_MMC
+#define CONFIG_PXA9XX_SDH
+#define CONFIG_DOS_PARTITION
+
+/* MMC configuration */
+#define CONFIG_CMD_MMC
+#define CONFIG_MMC
+#define CONFIG_GENERIC_MMC
+#define CONFIG_PXA9XX_SDH
+#define CONFIG_DOS_PARTITION
+
+#define BOARD_LATE_INIT
+#define BOARD_EARLY_INIT
 #endif
 /* __CONFIG_H */

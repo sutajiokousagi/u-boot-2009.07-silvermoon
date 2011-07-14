@@ -48,10 +48,8 @@ static int   ep1_len;
 static int   ep1_remain;
 static int   ep1_retries = 0;
 static usb_callback_t ep1_callback;
-static int tx_pktsize;
 
 static void ep1_done(int flag);
-static int u2d_info();
 
 void dump_buffer(char *buf, unsigned length)
 {
@@ -85,7 +83,6 @@ ep1_stall( void )
 static void ep1_send_packet(void)
 {
 	struct mv_usb_dev *mv_dev = &the_controller;
-	int i, count=100, complete = 0;
 	struct usb_request ep1_req;
 	
 	/* init the params for transfer */
@@ -102,7 +99,7 @@ static void ep1_send_packet(void)
 	}
 
 	if (usb_debug) {
-		printf("%s: exit, buf %x len %d\n", 
+		printf("%s: exit, buf %p len %d\n",
 			__FUNCTION__, ep1_buf, ep1_len);
 	}
 }
@@ -147,7 +144,7 @@ void ep1_int_hndlr(struct usb_request *usb_req)
 	ep1_remain = ep1_len - usb_req->length;
 
 	if (usb_debug)
-		printf("%s send finisned buf %x len %d remain %d\n", 
+		printf("%s send finisned buf %p len %d remain %d\n",
 			__func__, usb_req->buf, usb_req->length, ep1_remain);
 
 	if (ep1_remain != 0) {
@@ -162,9 +159,6 @@ void ep1_int_hndlr(struct usb_request *usb_req)
 int
 ep1_send(char *buf, int len, usb_callback_t callback)
 {
-	int i=0;
-	int flags;
-
 	if (usb_debug) printf( "\npxa_usb_send: "
 		"data len=%d state=%d blen=%d\n", 
 		len, usbd_info.state, ep1_len);

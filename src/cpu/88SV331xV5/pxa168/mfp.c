@@ -23,12 +23,6 @@
 #include <asm/arch/common.h>
 #include <asm/arch/mfp.h>
 
-/* mfp_spin_lock is used to ensure that MFP register configuration
- * (most likely a read-modify-write operation) is atomic, and that
- * mfp_table[] is consistent
- */
-static DEFINE_SPINLOCK(mfp_spin_lock);
-
 static void __iomem *mfpr_mmio_base;
 static struct pxa3xx_mfp_pin mfp_table[MFP_PIN_MAX];
 
@@ -55,10 +49,8 @@ static inline void __mfp_config(int pin, unsigned long val)
 void pxa3xx_mfp_config(mfp_cfg_t *mfp_cfgs, int num)
 {
 	int i, pin;
-	unsigned long val, flags;
+	unsigned long val;
 	mfp_cfg_t *mfp_cfg = mfp_cfgs;
-
-	spin_lock_irqsave(&mfp_spin_lock, flags);
 
 	for (i = 0; i < num; i++, mfp_cfg++) {
 		pin = MFP_CFG_PIN(*mfp_cfg);
@@ -66,6 +58,7 @@ void pxa3xx_mfp_config(mfp_cfg_t *mfp_cfgs, int num)
 
 		BUG_ON(pin >= MFP_PIN_MAX);
 
+#if !defined(CONFIG_ASPENITE)
 		if (cpu_is_pxa935() || cpu_is_pxa910()) {
 			/* pxa935 only, shift the Drive Strength 
 			 * from bit[11:10] to bit[12:11] */
@@ -75,46 +68,35 @@ void pxa3xx_mfp_config(mfp_cfg_t *mfp_cfgs, int num)
 		}
 		if (cpu_is_pxa910())
 			val |= 0x80;
+#endif
 		__mfp_config(pin, val);
 	}
 
 	mfpr_sync();
-	spin_unlock_irqrestore(&mfp_spin_lock, flags);
 }
 
 unsigned long pxa3xx_mfp_read(int mfp)
 {
-	unsigned long val, flags;
+	unsigned long val;
 
 	BUG_ON(mfp >= MFP_PIN_MAX);
-
-	spin_lock_irqsave(&mfp_spin_lock, flags);
 	val = mfpr_readl(mfp_table[mfp].mfpr_off);
-	spin_unlock_irqrestore(&mfp_spin_lock, flags);
-
 	return val;
 }
 
 void pxa3xx_mfp_write(int mfp, unsigned long val)
 {
-	unsigned long flags;
 
 	BUG_ON(mfp >= MFP_PIN_MAX);
-
-	spin_lock_irqsave(&mfp_spin_lock, flags);
 	mfpr_writel(mfp_table[mfp].mfpr_off, val);
 	mfpr_sync();
-	spin_unlock_irqrestore(&mfp_spin_lock, flags);
 }
 
 void pxa3xx_mfp_set_afds(int mfp, int af, int ds)
 {
 	uint32_t mfpr_off, mfpr_val;
-	unsigned long flags;
 
 	BUG_ON(mfp >= MFP_PIN_MAX);
-
-	spin_lock_irqsave(&mfp_spin_lock, flags);
 	mfpr_off = mfp_table[mfp].mfpr_off;
 
 	mfpr_val = mfpr_readl(mfpr_off);
@@ -124,18 +106,13 @@ void pxa3xx_mfp_set_afds(int mfp, int af, int ds)
 
 	mfpr_writel(mfpr_off, mfpr_val);
 	mfpr_sync();
-
-	spin_unlock_irqrestore(&mfp_spin_lock, flags);
 }
 
 void pxa3xx_mfp_set_rdh(int mfp, int rdh)
 {
 	uint32_t mfpr_off, mfpr_val;
-	unsigned long flags;
 
 	BUG_ON(mfp >= MFP_PIN_MAX);
-
-	spin_lock_irqsave(&mfp_spin_lock, flags);
 
 	mfpr_off = mfp_table[mfp].mfpr_off;
 
@@ -147,18 +124,13 @@ void pxa3xx_mfp_set_rdh(int mfp, int rdh)
 
 	mfpr_writel(mfpr_off, mfpr_val);
 	mfpr_sync();
-
-	spin_unlock_irqrestore(&mfp_spin_lock, flags);
 }
 
 void pxa3xx_mfp_set_lpm(int mfp, int lpm)
 {
 	uint32_t mfpr_off, mfpr_val;
-	unsigned long flags;
 
 	BUG_ON(mfp >= MFP_PIN_MAX);
-
-	spin_lock_irqsave(&mfp_spin_lock, flags);
 
 	mfpr_off = mfp_table[mfp].mfpr_off;
 	mfpr_val = mfpr_readl(mfpr_off);
@@ -172,18 +144,13 @@ void pxa3xx_mfp_set_lpm(int mfp, int lpm)
 
 	mfpr_writel(mfpr_off, mfpr_val);
 	mfpr_sync();
-
-	spin_unlock_irqrestore(&mfp_spin_lock, flags);
 }
 
 void pxa3xx_mfp_set_pull(int mfp, int pull)
 {
 	uint32_t mfpr_off, mfpr_val;
-	unsigned long flags;
 
 	BUG_ON(mfp >= MFP_PIN_MAX);
-
-	spin_lock_irqsave(&mfp_spin_lock, flags);
 
 	mfpr_off = mfp_table[mfp].mfpr_off;
 	mfpr_val = mfpr_readl(mfpr_off);
@@ -192,18 +159,13 @@ void pxa3xx_mfp_set_pull(int mfp, int pull)
 
 	mfpr_writel(mfpr_off, mfpr_val);
 	mfpr_sync();
-
-	spin_unlock_irqrestore(&mfp_spin_lock, flags);
 }
 
 void pxa3xx_mfp_set_edge(int mfp, int edge)
 {
 	uint32_t mfpr_off, mfpr_val;
-	unsigned long flags;
 
 	BUG_ON(mfp >= MFP_PIN_MAX);
-
-	spin_lock_irqsave(&mfp_spin_lock, flags);
 
 	mfpr_off = mfp_table[mfp].mfpr_off;
 	mfpr_val = mfpr_readl(mfpr_off);
@@ -214,17 +176,13 @@ void pxa3xx_mfp_set_edge(int mfp, int edge)
 
 	mfpr_writel(mfpr_off, mfpr_val);
 	mfpr_sync();
-
-	spin_unlock_irqrestore(&mfp_spin_lock, flags);
 }
 
 void __init pxa3xx_mfp_init_addr(struct pxa3xx_mfp_addr_map *map)
 {
 	struct pxa3xx_mfp_addr_map *p;
-	unsigned long offset, flags;
+	unsigned long offset;
 	int i;
-
-	spin_lock_irqsave(&mfp_spin_lock, flags);
 
 	for (p = map; p->start != MFP_PIN_INVALID; p++) {
 		offset = p->offset;
@@ -236,8 +194,6 @@ void __init pxa3xx_mfp_init_addr(struct pxa3xx_mfp_addr_map *map)
 			offset += 4; i++;
 		} while ((i <= p->end) && (p->end != -1));
 	}
-
-	spin_unlock_irqrestore(&mfp_spin_lock, flags);
 }
 
 void __init pxa3xx_init_mfp(void)

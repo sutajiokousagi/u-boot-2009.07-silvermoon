@@ -1,7 +1,7 @@
 /*
  *  Copyright (C) Marvell International Ltd. (kvedere@marvell.com)
  *  Code heavily based on Linux driver
- *  	/driver/mmc/host/pxa_sdh.c 
+ *  	/driver/mmc/host/pxa_sdh.c
  *  Copyright (C) 2008-2009 Marvell International Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -42,13 +42,12 @@
 #define MMC_BUS_WIDTH_8		8
 #define CONFIG_MMC_SDMA		1
 
-// Uncomment for lots of debug spew
 //#define CONFIG_MMC_DEBUG	1
 
 #ifdef CONFIG_MMC_DEBUG
 #define mmc_dbg printf
 #else
-#define mmc_dbg(arg...) 
+#define mmc_dbg(arg...)
 #endif
 
 struct pxa_sdh_host {
@@ -92,7 +91,7 @@ static inline int fls(int x)
 	int ret;
 
 	asm("clz\t%0, %1" : "=r" (ret) : "r" (x) : "cc");
-       	ret = 32 - ret;
+	ret = 32 - ret;
 	return ret;
 }
 
@@ -132,7 +131,7 @@ static void pxa_sdh_start_clock(struct pxa_sdh_host *host)
 	} while (timeout--);
 	if (!timeout)
 		printf("%s: unable to start clock\n",__func__);
-	
+
 	SET_REG_BITS(host, SD_FREQ_SEL_OFFSET, SD_FREQ_SEL_MASK,
 		host->clkrt, SD_CLOCK_CNTL);
 
@@ -192,7 +191,9 @@ static int pxa_sdh_process_irq(struct pxa_sdh_host *host,u32 intr_type)
 	ulong hz = 3250000; /* 3.25 MHz Timer Clock */
 	ushort done = GET_REG(host, SD_NOR_I_STAT) & intr_type;
         ulong start, curr, diff;
+#ifdef CONFIG_MMC_DEBUG
 	struct mmc_cmd* cmd = host->cmd;
+#endif
 
 	start = get_ticks();
         while(!done)
@@ -200,11 +201,11 @@ static int pxa_sdh_process_irq(struct pxa_sdh_host *host,u32 intr_type)
                 done = GET_REG(host, SD_NOR_I_STAT) & intr_type;
                 if( GET_REG(host, SD_NOR_I_STAT) & 0x8000 )
                 {
-                        printf("Error! cmd : %d, err : %04x\n", cmd->cmdidx, GET_REG(host, SD_ERR_I_STAT));
+                        mmc_dbg("Error! cmd : %d, err : %04x\n", cmd->cmdidx, GET_REG(host, SD_ERR_I_STAT));
 			host->error = 1;
 			pxa_sdh_finish_request(host);
 			if (GET_REG(host, SD_ERR_I_STAT) & 0x1)
-                        	return TIMEOUT;      /* error happened */
+				return TIMEOUT;      /* error happened */
 			else
 				return COMM_ERR;
                 }
@@ -220,28 +221,23 @@ static int pxa_sdh_process_irq(struct pxa_sdh_host *host,u32 intr_type)
                 }
         }
 
-	if (intr_type == CMD_COMP) {
-                pxa_sdh_cmd_done(host);
-		return 0;
-        }
+	if (intr_type & CMD_COMP)
+		pxa_sdh_cmd_done(host);
 
 #ifdef CONFIG_MMC_SDMA
-        if (intr_type == DMA_INT) {
-                pxa_sdh_dma_data_done(host);
-		return 0;
-        }
+	if (intr_type & DMA_INT)
+		pxa_sdh_dma_data_done(host);
 #else
-	if ((cmdtype == TX_RDY) || (cmdtype == RX_RDY)) {
-                pxa_sdh_pio_data_done(host);
-		return 0;
-        }
+	if ((cmdtype & TX_RDY) || (cmdtype & RX_RDY))
+		pxa_sdh_pio_data_done(host);
 #endif
 
-        if (intr_type == XFER_COMP) {
-                pxa_sdh_data_done(host);
-		return 0;
-        }
- 
+	if (intr_type & XFER_COMP)
+		pxa_sdh_data_done(host);
+
+	/* Clear Status Bits */
+	SET_REG(host, intr_type, SD_NOR_I_STAT);
+	return 0;
 }
 
 static int pxa_sdh_start_cmd(struct pxa_sdh_host *host)
@@ -319,13 +315,12 @@ static int pxa_sdh_start_cmd(struct pxa_sdh_host *host)
 	SET_REG(host, cmd_val, SD_COMMAND);
 
 	ret = pxa_sdh_process_irq(host, CMD_COMP);
-	while(!ret && data) {
-		if (!(((host->bytes_xfered/data->blocksize)+1) == data->blocks))
-			ret = pxa_sdh_process_irq(host, DMA_INT);
-		else {
-			ret = pxa_sdh_process_irq(host, XFER_COMP);
-			break;
-		}
+	if (!ret && data) {
+		do {
+			ret = pxa_sdh_process_irq(host, (DMA_INT | XFER_COMP));
+			/* If error or xfer completed (in which case
+			 * bytes_xfered is reset to 0) break */
+		} while (host->bytes_xfered);
 	}
 	return ret;
 }
@@ -363,7 +358,7 @@ static int pxa_sdh_cmd_done(struct pxa_sdh_host *host)
 
 
 	mmc_dbg("%s: resp[0]=0x%x resp[1]=0x%x resp[2]=0x%x resp[3]=0x%x\n",__func__,
-                cmd->response[0], cmd->response[1], cmd->response[2], cmd->response[3]);	
+                cmd->response[0], cmd->response[1], cmd->response[2], cmd->response[3]);
 	if (host->error || !host->data) {
 		pxa_sdh_finish_request(host);
 	}
@@ -375,7 +370,7 @@ static int pxa_sdh_cmd_done(struct pxa_sdh_host *host)
 static void pxa_sdh_pio_data_done(struct pxa_sdh_host *host)
 {
 	struct mmc_data *data = host->data;
-	u16 blk_size = data->blocksize; 
+	u16 blk_size = data->blocksize;
 	u16 i = 0;
 
 	if (DATA_DIRECTION_READ(data)) {
@@ -400,9 +395,14 @@ static void pxa_sdh_pio_data_done(struct pxa_sdh_host *host)
 static void pxa_sdh_dma_data_done(struct pxa_sdh_host *host)
 {
 	struct mmc_data *data = host->data;
+	int host_dma_bdry_size;
 
 	if (host->bytes_xfered < host->data_len) {
-		host->bytes_xfered = host->bytes_xfered + data->blocksize;
+		host_dma_bdry_size = 0x1000 << (((u16) GET_REG(host, SD_BLOCK_SIZE)) >> HOST_DMA_BDRY_OFFSET);
+		if (host_dma_bdry_size < data->blocksize)
+			host->bytes_xfered = host->bytes_xfered + host_dma_bdry_size;
+		else
+			host->bytes_xfered = host->bytes_xfered + data->blocksize;
 		pxa_sdh_setup_data(host);
 	}
 }
@@ -448,7 +448,8 @@ static int pxa_sdh_request(struct mmc *mmc, struct mmc_cmd *cmd,
 	if (data) {
 		mmc_dbg("%s: setup data, blk_sz=%d, blk_cnt=0x%x\n",__func__,
 			data->blocksize, data->blocks);
-		SET_REG(host, ((u16)HOST_DMA_BDRY_MASK << HOST_DMA_BDRY_OFFSET) | data->blocksize, SD_BLOCK_SIZE);
+		/* Set the Host DMA Boundary Buffer to Maximum allowed (512 KB) */
+		SET_REG(host, ((u16)((HOST_DMA_BDRY_MASK & 0x7) << HOST_DMA_BDRY_OFFSET) | data->blocksize), SD_BLOCK_SIZE);
 		SET_REG(host, data->blocks, SD_BLOCK_COUNT);
 
 		pxa_sdh_setup_data(host);
@@ -480,14 +481,14 @@ static void pxa_sdh_set_ios(struct mmc *mmc)
 			host->clkrt = 1 << (shift - 2);
 		}
 
-//		printf("%s: set clkrt = %08x\n",__func__,host->clkrt);
+		mmc_dbg("%s: set clkrt = %08x\n",__func__,host->clkrt);
 		pxa_sdh_stop_clock(host);
 		pxa_sdh_start_clock(host);
 
-		if((host->clkrt == 0 && host->clkrate > 25000000) 
+		if((host->clkrt == 0 && host->clkrate > 25000000)
 			|| (host->clkrt && (host->clkrate/(host->clkrt*2)) > 25000000)) {
 			SET_REG_BIT(host, HI_SPEED_EN, SD_HOST_CTRL);
-//			printf("%s: set as HIGH_SPEED.\n",__func__);
+			mmc_dbg("%s: set as HIGH_SPEED.\n",__func__);
 		} else
 			CLEAR_REG_BIT(host, HI_SPEED_EN, SD_HOST_CTRL);
 
@@ -506,13 +507,13 @@ static void pxa_sdh_set_ios(struct mmc *mmc)
 	if (mmc->bus_width == MMC_BUS_WIDTH_8) {
 		SET_REG_BIT(host, MMC_CARD, SD_CE_ATA_2);
 		SET_REG_BIT(host, DATA_WIDTH_8BIT, SD_CE_ATA_2);
-//			printf("%s: set as 8_BIT_MODE.\n",__func__);
+			mmc_dbg("%s: set as 8_BIT_MODE.\n",__func__);
 	} else {
 		CLEAR_REG_BIT(host, MMC_CARD, SD_CE_ATA_2);
 		CLEAR_REG_BIT(host, DATA_WIDTH_8BIT, SD_CE_ATA_2);
 		if (mmc->bus_width == MMC_BUS_WIDTH_4) {
 			SET_REG_BIT(host, DATA_WIDTH_4BIT, SD_HOST_CTRL);
-//				printf("%s: set as 4_BIT_MODE.\n",__func__);
+				mmc_dbg("%s: set as 4_BIT_MODE.\n",__func__);
 		} else {
 			CLEAR_REG_BIT(host, DATA_WIDTH_4BIT, SD_HOST_CTRL);
 		}

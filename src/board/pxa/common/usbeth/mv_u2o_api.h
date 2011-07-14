@@ -9,7 +9,7 @@
 //#define mvOsPrintf(fmt,args...)	 printf( fmt, ## args)
 #define mvOsPrintf	printf
 #else
-#define mvOsPrintf
+#define mvOsPrintf(frmt, x...)
 #endif
 
 

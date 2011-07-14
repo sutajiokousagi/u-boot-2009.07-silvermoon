@@ -29,10 +29,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-
-static int console_is_serial = 1;
-static device_t *serial_dev = NULL;
-
 #ifdef CONFIG_AMIGAONEG3SE
 int console_changed = 0;
 #endif
@@ -237,10 +233,6 @@ void fputc (int file, const char c)
 #else
 		stdio_devices[file]->putc (c);
 #endif
-	if(file == stdout && !console_is_serial)
-		serial_dev->putc(c);
-	if(file == stderr && !console_is_serial)
-		serial_dev->putc(c);
 }
 
 void fputs (int file, const char *s)
@@ -251,10 +243,6 @@ void fputs (int file, const char *s)
 #else
 		stdio_devices[file]->puts (s);
 #endif
-	if(file == stdout && !console_is_serial)
-		serial_dev->puts(s);
-	if(file == stderr && !console_is_serial)
-		serial_dev->puts(s);
 }
 
 void fprintf (int file, const char *fmt, ...)
@@ -664,8 +652,6 @@ int console_init_r (void)
 	struct list_head *pos;
 	device_t *dev;
 
-	serial_dev = search_device (DEV_FLAGS_OUTPUT, "serial");
-
 #ifdef CONFIG_SPLASH_SCREEN
 	/* suppress all output if splash screen is enabled and we have
 	   a bmp to display                                            */
@@ -694,7 +680,6 @@ int console_init_r (void)
 #ifdef CONFIG_CONSOLE_MUX
 		console_devices[stdout][0] = outputdev;
 		console_devices[stderr][0] = outputdev;
-
 #endif
 	}
 
@@ -707,9 +692,6 @@ int console_init_r (void)
 	}
 
 	gd->flags |= GD_FLG_DEVINIT;	/* device initialization completed */
-
-	if(serial_dev != outputdev)
-		console_is_serial = 0;
 
 #ifndef CONFIG_SYS_CONSOLE_INFO_QUIET
 	/* Print information */

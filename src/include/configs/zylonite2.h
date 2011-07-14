@@ -54,7 +54,7 @@
 /*
  * Size of malloc() pool
  */
-#define CONFIG_SYS_MALLOC_LEN      	(CONFIG_SYS_ENV_SIZE + 512*1024)
+#define CONFIG_SYS_MALLOC_LEN      	(CONFIG_SYS_ENV_SIZE + 1024 *1024)
 #define CONFIG_SYS_GBL_DATA_SIZE   	128   /* size in bytes reserved for initial data */
 
 /*
@@ -76,6 +76,7 @@
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_NET
 #define CONFIG_NET_MULTI
+#define CONFIG_LOOP_WRITE_MTD
 #define MV_ETH_DEVS 			1
 
 #define CONFIG_IPADDR      		192.168.1.101
@@ -168,13 +169,13 @@
 #define PHYS_SDRAM_SIZE_DEC     	64
 #define CONFIG_SYS_ENV_SIZE            	0x10000   /* Total Size of Environment Sector */
 #define	CONFIG_ENV_IS_IN_NAND		1
-#define CMD_SAVEENV			1
 #define CONFIG_SYS_NO_FLASH		1
 #define CONFIG_BBM			1
 
 /*-----------------------------------------------------------------------
  * NAND and DFC configuration
  */
+#define CONFIG_NAND_PXA3XX
 #define CONFIG_CMD_NAND 		1
 #define CONFIG_SYS_MAX_NAND_DEVICE	1         /* Max number of NAND devices */
 #define CONFIG_SYS_NAND_BASE		0xD4283000

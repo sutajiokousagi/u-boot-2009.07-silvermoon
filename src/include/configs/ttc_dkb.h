@@ -47,12 +47,17 @@
 
 #define CONFIG_SYS_HZ   		(3250000)      /* KV - Timer 0 is clocked at 3.25 MHz */
 #define CONFIG_SYS_TIMERBASE 		0xD4014000 
+#define CONFIG_TIMER2
+#define CONFIG_TIMER2_HZ   		(32768)
+#define CONFIG_TIMER2_BASE 		0xD4016000
 #define CONFIG_SYS_CPUSPEED		0x161		/* set core clock to 400/200/100 MHz */
 #define CONFIG_DISPLAY_BOARDINFO
 
 #define CONFIG_CMDLINE_TAG         	1   /* enable passing of ATAGs  */
 #define CONFIG_SETUP_MEMORY_TAGS   	1
 #define CONFIG_MISC_INIT_R         	1   /* call misc_init_r during start up */
+
+#define CONFIG_USE_IRQ
 
 /*
  * Size of malloc() pool
@@ -78,6 +83,7 @@
 
 #define CONFIG_CMD_NET
 #define CONFIG_NET_MULTI
+#define CONFIG_LOOP_WRITE_MTD
 #define MV_ETH_DEVS 			1
 
 #define CONFIG_IPADDR      		192.168.1.101
@@ -178,6 +184,7 @@
 /*-----------------------------------------------------------------------
  * NAND and DFC configuration
  */
+#define CONFIG_NAND_PXA3XX
 #define CONFIG_CMD_NAND 		1
 #define CONFIG_SYS_MAX_NAND_DEVICE	1         /* Max number of NAND devices */
 #define CONFIG_SYS_NAND_BASE		0xD4283000

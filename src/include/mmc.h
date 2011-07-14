@@ -42,8 +42,9 @@
 
 #define MMC_MODE_HS		0x001
 #define MMC_MODE_HS_52MHz	0x010
-#define MMC_MODE_4BIT		0x100
-#define MMC_MODE_8BIT		0x200
+#define MMC_MODE_1BIT		0x100
+#define MMC_MODE_4BIT		0x200
+#define MMC_MODE_8BIT		0x400
 
 #define SD_DATA_4BIT	0x00040000
 
@@ -75,6 +76,13 @@
 #define MMC_CMD_WRITE_SINGLE_BLOCK	24
 #define MMC_CMD_WRITE_MULTIPLE_BLOCK	25
 #define MMC_CMD_APP_CMD			55
+/* MMC bus testing commands*/
+#define MMC_CMD_BUSTEST_W		19
+#define MMC_CMD_BUSTEST_R		14
+/* MMC erase commands */
+#define MMC_CMD_ERASE_GRP_START		35
+#define MMC_CMD_ERASE_GRP_END		36
+#define MMC_CMD_ERASE			38
 
 #define SD_CMD_SEND_RELATIVE_ADDR	3
 #define SD_CMD_SWITCH_FUNC		6
@@ -128,6 +136,7 @@
  * EXT_CSD fields
  */
 
+#define EXT_CSD_PART_CONF	179	/* R/W */
 #define EXT_CSD_BUS_WIDTH	183	/* R/W */
 #define EXT_CSD_HS_TIMING	185	/* R/W */
 #define EXT_CSD_CARD_TYPE	196	/* RO */
@@ -179,6 +188,19 @@ struct mmc_cid {
 	char pnm[7];
 };
 
+struct mmc_bits_cid {
+	char manu_id;
+	char reserved0:6,
+	     dev_type:2;
+	char oem_id;
+	char prod_name[6];
+	char prod_ver;
+	u32  prod_sn;
+	char month:4,
+	     year:4;
+	char crc:7;
+};
+
 struct mmc_csd
 {
 	u8	csd_structure:2,
@@ -200,8 +222,9 @@ struct mmc_csd
 		vdd_w_curr_min:3,
 		vdd_w_curr_max:3,
 		c_size_mult:3,
-		sector_size:5,
+		//sector_size:5,
 		erase_grp_size:5,
+		erase_grp_mult:5,
 		wp_grp_size:5,
 		wp_grp_enable:1,
 		default_ecc:2,
@@ -246,6 +269,7 @@ struct mmc {
 	uint f_min;
 	uint f_max;
 	int high_capacity;
+	int sect_mode_access;
 	uint bus_width;
 	uint clock;
 	uint card_caps;
@@ -253,17 +277,30 @@ struct mmc {
 	uint ocr;
 	uint scr[2];
 	uint csd[4];
+	struct mmc_csd bcsd;
 	uint cid[4];
+	struct mmc_bits_cid bcid;
 	ushort rca;
 	uint tran_speed;
 	uint read_bl_len;
+	uint max_read_bl_len;
 	uint write_bl_len;
+	uint sectors;
 	u64 capacity;
 	block_dev_desc_t block_dev;
 	int (*send_cmd)(struct mmc *mmc,
 			struct mmc_cmd *cmd, struct mmc_data *data);
 	void (*set_ios)(struct mmc *mmc);
 	int (*init)(struct mmc *mmc);
+
+	/*eMMC4.4 special features*/
+	char ext_csd_part_support;
+	char ext_csd_part_config;
+	char ext_csd_boot_config_prot;
+	u32  ext_csd_boot_size;
+	char ext_csd_boot_bus_width;
+	u32  erase_grp_size; //sectors
+	char ext_csd_erase_mem_content;
 };
 
 int mmc_register(struct mmc *mmc);

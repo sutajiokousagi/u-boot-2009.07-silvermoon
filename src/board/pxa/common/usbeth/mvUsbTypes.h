@@ -167,7 +167,7 @@ extern USB_IMPORT_FUNCS*            global_import_funcs;
 
 
 #define USB_virt_to_phys(pVirt)     (global_import_funcs->bspVirtToPhys == NULL) ?      \
-                                        (uint_32)(pVirt) : global_import_funcs->bspVirtToPhys(NULL, pVirt)
+					(uint_32)(pVirt) : global_import_funcs->bspVirtToPhys(NULL, (void *)pVirt)
 
 #define USB_get_cap_reg_addr(dev)   global_import_funcs->bspGetCapRegAddr(dev)
 

@@ -14,18 +14,8 @@
 #define MCRVAL (MCR_DTR | MCR_RTS)			/* RTS/DTR */
 #define FCRVAL (FCR_FIFO_EN | FCR_RXSR | FCR_TXSR)	/* Clear & enable FIFOs */
 
-static char *kernel_log_offset = 0;
-static int  *kernel_log_pos    = 0;
-
-static void reinit_logs(void) {
-	kernel_log_offset = (char *)0x04000000LL;
-	kernel_log_pos    = (int *)kernel_log_offset;
-	*kernel_log_pos = 0;
-}
-
 void NS16550_init (NS16550_t com_port, int baud_divisor)
 {
-	reinit_logs();
 #ifdef CONFIG_PXAXXX
        com_port->ier = 0x40;
 #else
@@ -34,10 +24,14 @@ void NS16550_init (NS16550_t com_port, int baud_divisor)
 #ifdef CONFIG_OMAP
 	com_port->mdr1 = 0x7;	/* mode select reset TL16C750*/
 #endif
+#ifndef CONFIG_PXAXXX
+	/* The baudrate setting is redundant (set again as required right below)
+	On PXA968 the two settings back-to-back result in wrong baudrate */
 	com_port->lcr = LCR_BKSE | LCRVAL;
 	com_port->dll = 0;
 	com_port->dlm = 0;
 	com_port->lcr = LCRVAL;
+#endif
 	com_port->mcr = MCRVAL;
 	com_port->fcr = FCRVAL;
 	com_port->lcr = LCR_BKSE | LCRVAL;
@@ -55,7 +49,6 @@ void NS16550_init (NS16550_t com_port, int baud_divisor)
 
 void NS16550_reinit (NS16550_t com_port, int baud_divisor)
 {
-	reinit_logs();
 #ifdef CONFIG_PXAXXX
        com_port->ier = 0x40;
 #else
@@ -80,17 +73,11 @@ void NS16550_putc (NS16550_t com_port, char c)
 {
 	if(__count < 1000)
 		__log_buf[__count ++] = c;
-	if(!kernel_log_offset || !kernel_log_pos)
-		reinit_logs();
 
-	/* Keep track of the console log at a known offset */
-	kernel_log_offset[(*kernel_log_pos)+4] = c;
-	(*kernel_log_pos)++;
-	if((*kernel_log_pos) > 1024*1024)
-		(*kernel_log_pos) = 0;
-
+#if (!defined CONFIG_PXA3XX_SPI && defined CONFIG_ASPENITE) || !defined CONFIG_ASPENITE
 	while ((com_port->lsr & LSR_THRE) == 0);
 	com_port->thr = c;
+#endif
 }
 
 char NS16550_getc (NS16550_t com_port)

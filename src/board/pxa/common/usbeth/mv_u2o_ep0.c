@@ -58,6 +58,8 @@ static void write_fifo( void );
 static void get_descriptor( usb_dev_request_t * pReq );
 static void queue_and_start_write( void * p, int req, int act );
 
+extern int mv_usb_ep_queue (struct mv_usb_ep *usb_ep, struct usb_request *_req);
+extern void usb_driver_speed(int speed);
 /***************************************************************************
   Inline Helpers
  ***************************************************************************/
@@ -167,7 +169,7 @@ static int sh_setup_begin(struct usb_request *usb_req)
 		printf("\n");
 	}
 	/* read the setup request */
-	n = memcpy((void*)&req, usb_req->buf, sizeof(usb_dev_request_t));
+	n = (unsigned)memcpy((void *)&req, usb_req->buf, sizeof(usb_dev_request_t));
 
 	/* Is it a standard request? (not vendor or class request) */
 	request_type = type_code_from_request( req.bmRequestType );
@@ -274,7 +276,7 @@ static void write_fifo( void )
 	if (usb_debug) printf("%s  data=0x%p len %d\n", 
 		__FUNCTION__, data, usb_req.length);
 	if (usb_debug) {
-		char *ptr = data;
+		char *ptr = (char *)data;
 		int i;
 		for (i=0;i<usb_req.length;i++) {
 			printf(" %x", *ptr++);
@@ -305,8 +307,6 @@ static void write_fifo( void )
 static void get_descriptor( usb_dev_request_t * pReq )
 {
 	string_desc_t * pString;
-	ep_desc_t * pEndpoint = 0;
-	config_desc_t *pcfg = 0;
 
 	desc_t * pDesc = pxa_usb_get_descriptor_ptr();
 	int type = pReq->wValue >> 8;

@@ -34,6 +34,10 @@ COBJS-$(CONFIG_USB_ISP116X_HCD) += isp116x-hcd.o
 COBJS-$(CONFIG_USB_R8A66597_HCD) += r8a66597-hcd.o
 COBJS-$(CONFIG_USB_SL811HS) += sl811_usb.o
 
+#ehci
+COBJS-$(CONFIG_USB_EHCI) += ehci-hcd.o
+COBJS-$(CONFIG_USB_EHCI_PXA168) += ehci-pxa168.o
+
 # device
 ifdef CONFIG_USB_DEVICE
 COBJS-y += usbdcore_ep0.o

@@ -237,8 +237,10 @@ static __inline__ int abortboot(int bootdelay)
 #endif
 
 	while ((bootdelay > 0) && (!abort)) {
-		int i;
-		unsigned long long start, end, usleft;
+		int __attribute__((unused)) i;
+		unsigned long long __attribute__((unused)) start;
+		unsigned long long __attribute__((unused)) end;
+	        unsigned long long __attribute__((unused)) usleft;
 
 		--bootdelay;
 		/* delay 100 * 10ms */

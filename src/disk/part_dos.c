@@ -110,7 +110,7 @@ static void print_partition_extended (block_dev_desc_t *dev_desc, int ext_part_s
 	}
 	i=test_block_type(buffer);
 	if(i==-1) {
-		printf ("bad MBR sector signature 0x%02x%02x\n",
+		printf ("\tbad MBR sector signature 0x%02x%02x\n",
 			buffer[DOS_PART_MAGIC_OFFSET],
 			buffer[DOS_PART_MAGIC_OFFSET + 1]);
 		return;
@@ -240,8 +240,14 @@ static int get_partition_info_extended (block_dev_desc_t *dev_desc, int ext_part
 
 void print_part_dos (block_dev_desc_t *dev_desc)
 {
+#if defined (CONFIG_MBR_SECTOR)
+	printf ("\tRead MBR at 0x%x\n", CONFIG_MBR_SECTOR);
+	printf ("\tPartition     Start Sector     Num Sectors     Type\n");
+	print_partition_extended (dev_desc, CONFIG_MBR_SECTOR, 0, 1);
+#else
 	printf ("Partition     Start Sector     Num Sectors     Type\n");
 	print_partition_extended (dev_desc, 0, 0, 1);
+#endif
 }
 
 int get_partition_info_dos (block_dev_desc_t *dev_desc, int part, disk_partition_t * info)

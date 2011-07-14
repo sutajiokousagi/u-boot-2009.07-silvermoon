@@ -124,44 +124,7 @@
 #define U2PMN		(0x030)       /* U2O PHY Monitor Register */
 #define U2OCG		(0x108)       /* U2O Clock Gate Register */
 #else
-#define U2PRSRVD        0x0
-#define U2PCTRL         0x4
-#define U2PPLL          0x8
-#define U2PTX           0xc
-#define U2PRX           0x10
-#define U2PIVREF        0x14
-#define U2PT0           0x18
-#define U2PT1           0x1c
-#define U2PT2           0x20
-#define U2PID           0x24
-#define U2PINT          0x28
-#define U2PDBGCTL       0x2c
-#define U2PCTL1         0x30
-#define U2PT3           0x34
-#define U2PT4           0x38
-#define U2PT5           0x3c
-
-// For UTMICTRL Register
-#define UTMI_CTRL_INPKT_DELAY_SHIFT             30
-#define UTMI_CTRL_INPKT_DELAY_SOF_SHIFT 	28
-#define UTMI_CTRL_ARC_PULLDN_SHIFT              12
-#define UTMI_CTRL_PLL_PWR_UP_SHIFT              1
-#define UTMI_CTRL_PWR_UP_SHIFT                  0
-// For UTMI_PLL Register
-#define UTMI_PLL_CLK_BLK_EN_SHIFT               24
-#define UTMI_PLL_FBDIV_SHIFT                    4
-#define UTMI_PLL_REFDIV_SHIFT                   0
-#define UTMI_PLL_FBDIV_MASK                     0x00000FF0
-#define UTMI_PLL_REFDIV_MASK                    0x0000000F
-// For UTMI_TX Register
-#define UTMI_TX_LOW_VDD_EN_SHIFT                11
-
-#define REG_RCAL_START                          0x00001000
-#define VCOCAL_START                            0x00200000
-#define KVCO_EXT                                0x00400000
-#define PLL_READY                               0x00800000
-#define CLK_BLK_EN                              0x01000000
-
+#include <asm/arch/pxa168_usb_phy.h>
 #endif
 
 #define U2P480		__REG(0x42404078)         /* U2O PHY 480Mhz Control */
@@ -246,7 +209,7 @@
 #ifdef DEBUG
 #define DBGMSG printf
 #else
-#define DBGMSG
+#define DBGMSG(ffmt, x...)
 #endif
 
 #define DELAY(ns) 	udelay(ns)
