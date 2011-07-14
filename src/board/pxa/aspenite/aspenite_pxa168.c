@@ -597,13 +597,22 @@ int board_init (void)
 
 
 
+    /* enable PMU user access/branch prediction */
+    __asm__ __volatile__ ("                     \n\
+        @ Allow access of performance counters \n\
+         @ (PMU) from user space                \n\
+        mov    r0, #0x1                        \n\
+        mrc    p15, 0, r0, c15, c9, 0          \n\
+        orr    r0, r0, #0x1                    \n\
+        mcr    p15, 0, r0, c15, c9, 0          \n\
+                                                \n\
+        @ Ensure branch prediction is          \n\
+         @ enabled - BPU (Default)              \n\
+        mrc    p15, 0, r0, c1, c0, 0           \n\
+        orr    r0, r0, #(1<<11)                \n\
+        mcr    p15, 0, r0, c1, c0, 0           \n\
+         " : "=r" (reg));
 
-    /* enable PMU user access */
-    __asm__ __volatile__ (
-           "mcr     p15, 0, %0, c15, c9, 0\n\t"
-           :
-           : "r"(0x1)
-    );
 
     gd->bd->bi_dram[0].start = PHYS_SDRAM_1;
     gd->bd->bi_dram[0].size  = initdram(0);
