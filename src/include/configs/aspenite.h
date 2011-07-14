@@ -191,18 +191,13 @@
 #if (CONFIG_BOOTDELAY >= 0)
 
 /* boot arguments" */
-//#define CONFIG_NANDBOOT           "nand read 0x500000 0x920000 0x300000"
-#if defined(CHUMBY_CNPLATFORM_silvermoon)
 #define CONFIG_CMD_BDI              // Enable bdinfo command
 #define CONFIG_CMD_MEMORY       /* md mm nm mw cp cmp crc base loop mtest */
 #define CONFIG_CMD_EXT2         /* EXT2 Support                 */
-#if defined(CHUMBY_CONFIGNAME_silvermoon_aspen)
-#define CONFIG_BOOTCOMMAND          "nand read 0x500000 0x920000 0x300000; bootz 0x500000"
-#else
 
 #define CONFIG_BOOTCOMMAND                                      \
     /* Init SD card */                                          \
-    "mmc rescan 0 ;"                                            \
+    "mmc rescan ;"                                              \
     " ;"                                                        \
     /* Test to see which Boot Partition is active */            \
     "PART=mmcblk0p2; PARTNAME=rfsA; KF=2; KB=krnA; "            \
@@ -223,7 +218,7 @@
     " ;"                                                        \
     /* Wait for the user to press Control-C */                  \
     "echo \"Press Control-C to enter a shell.\" ;"              \
-    "if sleep 2 ;"                                              \
+    "if sleep 1 ;"                                              \
     "    then echo \"Continuing boot...\" ;"                    \
     "    else echo \"Chumby shell\"; echo \"Type 'run bootcmd' to exit\"; exit ;" \
     "fi ;"                                                      \
@@ -245,10 +240,6 @@
     ""
     //"cconfigload mmc 0 ${default_load_addr} ${KERN} ;"
 
-#endif
-#else
-#define CONFIG_BOOTCOMMAND          "setenv autoboot boot; bootz 0x500000; setenv autoboot none"
-#endif
 
 #define CONFIG_ROOTPATH         /tftpboot/rootfs_arm
 
@@ -313,11 +304,7 @@
 #define PHYS_SDRAM_SIZE_DEC         64
 #endif
 #define CONFIG_SYS_ENV_SIZE             0x10000   /* Total Size of Environment Sector */
-//#ifndef CONFIG_MMC3
-//#define   CONFIG_ENV_IS_IN_NAND       1
-//#else
 #define CONFIG_ENV_IS_NOWHERE       1
-//#endif
 #define CMD_SAVEENV         1
 #define CONFIG_SYS_NO_FLASH     1
 #ifndef CONFIG_MMC3
@@ -330,22 +317,17 @@
  */
 #define CONFIG_CMD_CPUID        1
 
-/*-----------------------------------------------------------------------
- * NAND and DFC configuration
- */
-/*
-#ifndef CONFIG_MMC3
-#define CONFIG_CMD_NAND         1
-#define CONFIG_SYS_MAX_NAND_DEVICE  1         // Max number of NAND devices
-#define CONFIG_SYS_NAND_BASE        0xD4283000
-#define CONFIG_SYS_ONENAND_BASE     0x80000000  // configure for ttc
-#endif
-#ifndef CHUMBY_CNPLATFORM_silvermoon
 #define CONFIG_USB_ETH
 #define CONFIG_U2O_REG_BASE     0xd4208000
 #define CONFIG_U2O_PHY_BASE     0xd4207000
-#endif
-*/
+
+#define CONFIG_CMD_PING
+#define CONFIG_CMD_NET
+#define CONFIG_NET_MULTI
+#define MV_ETH_DEVS             1
+#define CONFIG_IPADDR           10.0.88.1
+#define CONFIG_SERVERIP         10.0.88.4
+#define CONFIG_ETHADDR          "00:00:5A:9F:6D:82"
 
 #endif
 /* __CONFIG_H */
