@@ -208,6 +208,7 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
   unsigned long ts;		/* timestamp */
   unsigned long ssp_word = 0;
   unsigned int temp;
+  int error = 0;
 
   if( !fn ) {
     printf ("%s: NULL Interface function table!\n", __FUNCTION__);
@@ -309,8 +310,8 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
 
   // gpios
   FPGA_SM_MFP_97 &= ~0x7; // done
-  FPGA_SM_MFP_119 &= ~0x7; // init
-  FPGA_SM_MFP_120 &= ~0x7; // reset
+  FPGA_SM_MFP_119 &= ~0x7; // reset
+  FPGA_SM_MFP_120 &= ~0x7; // init
 
   // inputs
   FPGA_SM_GPIO_GPDR = FPGA_SM_GPIO_GPDR & ~FPGA_SM_DONE_MSK;
@@ -332,15 +333,26 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
   FPGA_SM_GPIO_GPCR |= FPGA_SM_RESET_N_MSK; // clear reset pin
 
   ts = get_timer (0);		/* get current time */
-  while( get_timer (ts) < 10 )
+  while( get_timer (ts) < 30 )
     ;
   
   FPGA_SM_GPIO_GPSR |= FPGA_SM_RESET_N_MSK; // set reset pin
   
   /////// wait for fpga to get ready
   ts = get_timer (0);		/* get current time */
-  while( get_timer (ts) < 100 )
+  while( get_timer (ts) < (200) ) // up to 200 ms
     ;
+
+  if( (FPGA_SM_GPIO_GPLR & FPGA_SM_INIT_N_MSK) == 0 ) {
+    // init was still low, let's do an extra-long timeout
+    printf( "Extended init case caught, waiting extra time for FPGA to become ready...\n" );
+    while( (get_timer (ts) < (10 * 100)) && ((FPGA_SM_GPIO_GPLR & FPGA_SM_INIT_N_MSK) == 0 ) )
+      // up to one second
+      ;
+  }
+  if( (FPGA_SM_GPIO_GPLR & FPGA_SM_INIT_N_MSK) == 0 ) {
+    printf( "FPGA still isn't ready, but moving ahead doggedly. We can't hang out here!\n" );
+  }
 
   i = 0;
   while( i < bsize ) {
@@ -357,10 +369,15 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
     /////////////// HERE
     // wait until fully empty
     while( (SSP2_SSSR & 0xF04) != 0x4 ) {
-
+      if( (FPGA_SM_GPIO_GPLR & FPGA_SM_INIT_N_MSK) == 0 ) {
+	error = 1;
+      }
     }
   }
   PRINTF( "wrote %d bytes\n", i );
+  if( error ) {
+    printf( "FPGA encountered a CRC error during configuration.\n" );
+  }
 
   ret_val = FPGA_SUCCESS;
 
