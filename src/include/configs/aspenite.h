@@ -210,11 +210,11 @@
     " ;"                                                        \
     /* Load the FPGA, which lets us draw to the screen */       \
     "echo \"Loading FPGA configuration.\" ;"                    \
-    "ext2load mmc 0:2 ${default_load_addr} /lib/firmware/hdmi_720p.bin ;" \
+    "cconfigload mmc 0:2 ${default_load_addr} 720p ;" \
     "fpga load 0 ${default_load_addr} 340604 ; "                \
     " ;"                                                        \
     "echo \"Loading boot logo.\" ;"                             \
-    "ext2load mmc 0:2 ${default_load_addr} /boot/logo.raw.gz ;" \
+    "cconfigload mmc 0:2 ${default_load_addr} logo ;" \
     "unzip ${default_load_addr} ${lcdbase} ;"                   \
     " ;"                                                        \
     /* Wait for the user to press Control-C */                  \
