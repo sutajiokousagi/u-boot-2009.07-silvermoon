@@ -231,7 +231,7 @@
     "setenv bootargs root=/dev/${PART} "                        \
             "rootwait console=ttyS0,115200 mem=128M "           \
             "uart_dma sysrq_always_enabled "                    \
-            "rootfstype=ext4 rw ;"                              \
+            "rootfstype=ext3 rw ;"                              \
     "echo \"Booting to ${PARTNAME}...\" ;"                      \
     " ;"                                                        \
     /* Load the kernel from the config area */                  \
