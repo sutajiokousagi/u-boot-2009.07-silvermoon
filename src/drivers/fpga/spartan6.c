@@ -229,10 +229,10 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
   printf ("Loading FPGA Device %d...\n", cookie);
 #endif
   
-  printf("SSP2 clock enable (52 MHz)\n");
-  APBC_SSP2_CLK_RST = 0x33;
-  APBC_SSP2_CLK_RST = 0x37; // reset the unit
-  APBC_SSP2_CLK_RST = 0x33;
+  printf("SSP2 clock enable (26 MHz)\n");
+  APBC_SSP2_CLK_RST = 0x23;
+  APBC_SSP2_CLK_RST = 0x27; // reset the unit
+  APBC_SSP2_CLK_RST = 0x23;
   
   printf("SSP3 clock enable (26 MHz)\n" );
   APBC_SSP3_CLK_RST = 0x23;
