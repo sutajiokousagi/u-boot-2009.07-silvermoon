@@ -47,13 +47,6 @@ endif
 # core command
 ifneq (${CHUMBY_CONFIG_platform},)
 COBJS-y += cmd_boot.o
-else
-ifndef CONFIG_PXAXXX
-COBJS-y += cmd_boot.o
-endif
-endif
-ifndef CONFIG_PXAXXX
-COBJS-y += cmd_bootm.o
 endif
 COBJS-y += cmd_nvedit.o
 
@@ -147,6 +140,7 @@ COBJS-$(CONFIG_CMD_SPI) += cmd_spi.o
 COBJS-$(CONFIG_CMD_STRINGS) += cmd_strings.o
 COBJS-$(CONFIG_CMD_TERMINAL) += cmd_terminal.o
 COBJS-$(CONFIG_CMD_TOUCHSCREEN) += cmd_touchscreen.o
+COBJS-$(CONFIG_CMD_BUTTON) += cmd_button.o
 COBJS-$(CONFIG_CMD_UBI) += cmd_ubi.o
 COBJS-$(CONFIG_CMD_UNIVERSE) += cmd_universe.o
 ifdef CONFIG_CMD_USB

@@ -41,6 +41,7 @@
 #define CONFIG_CMD_STRINGS
 #define CONFIG_CMD_SETEXPR
 #define CONFIG_CMD_TOUCHSCREEN
+#define CONFIG_CMD_BUTTON
 //#define CONFIG_CMD_TERMINAL
 
 #define CONFIG_BOOTM_LINUX
@@ -200,9 +201,6 @@
     /* Init SD card */                                          \
     "mmc rescan ;"                                              \
     " ;"                                                        \
-    /* Test to see which Boot Partition is active */            \
-    "PART=mmcblk0p2; PARTNAME=rfsA; KF=2; KB=krnA; "            \
-    " ;"                                                        \
     /* Have a pretty, flashy startup screen */                  \
     /* Draw an image to the screen */                           \
     "echo \"Drawing something to the screen...\" ;"             \
@@ -210,36 +208,41 @@
     " ;"                                                        \
     /* Load the FPGA, which lets us draw to the screen */       \
     "echo \"Loading FPGA configuration.\" ;"                    \
-    "cconfigload mmc 0:2 ${default_load_addr} 720p ;" \
+    "cconfigload mmc 0:2 ${default_load_addr} 720p ;"           \
     "fpga load 0 ${default_load_addr} 340604 ; "                \
     " ;"                                                        \
     "echo \"Loading boot logo.\" ;"                             \
-    "cconfigload mmc 0:2 ${default_load_addr} logo ;" \
+    "cconfigload mmc 0:2 ${default_load_addr} logo ;"           \
     "unzip ${default_load_addr} ${lcdbase} ;"                   \
     " ;"                                                        \
-    /* Wait for the user to press Control-C */                  \
-    "echo \"Press Control-C to enter a shell.\" ;"              \
-    "if sleep 1 ;"                                              \
-    "    then echo \"Continuing boot...\" ;"                    \
-    "    else echo \"Chumby shell\"; echo \"Type 'run bootcmd' to exit\"; exit ;" \
-    "fi ;"                                                      \
+    /* If the user is pressing the button, go to recovery */    \
+    "if button; then "                                          \
+    "    echo \"Press Control-C to enter a shell.\" ;"          \
+    "    if sleep 3; then if button; then "                     \
+    "        echo \"Booting to recovery console...\" ;"         \
+    "        cconfigload mmc 0 ${default_load_addr} krnB ;"     \
+    "        bootz ${default_load_addr} ; fi; "                 \
+    "    else "                                                 \
+    "        echo \"Chumby shell\"; "                           \
+    "        echo \"Type 'run bootcmd' to exit\"; "             \
+    "        exit ;"                                            \
+    "    fi; "                                                  \
+    "else "                                                     \
+    "    echo \"Hold the button and reboot to enter a shell\"; "\
+    "fi; "                                                      \
     " ;"                                                        \
-    /* If the user is pressing the screen, swap partitions */   \
-    "echo \"Booting to regular shell...\" ;"                \
+    "echo \"Booting to regular mode...\" ;"                     \
     " ;"                                                        \
     /* Set up the Linux command line */                         \
-    "setenv bootargs root=/dev/${PART} "                        \
+    "setenv bootargs root=/dev/mmcblk0p2 "                      \
             "rootwait console=ttyS0,115200 mem=128M "           \
             "uart_dma sysrq_always_enabled "                    \
             "rootfstype=ext3 rw ;"                              \
-    "echo \"Booting to ${PARTNAME}...\" ;"                      \
     " ;"                                                        \
     /* Load the kernel from the config area */                  \
-    /*"ext2load mmc 0:${KF} ${default_load_addr} /boot/zImage && cconfigload mmc 0 ${default_load_addr} ${KB};"*/\
-    "cconfigload mmc 0 ${default_load_addr} ${KB};"             \
+    "cconfigload mmc 0 ${default_load_addr} krnA;"              \
     "bootz ${default_load_addr} ;"                              \
     ""
-    //"cconfigload mmc 0 ${default_load_addr} ${KERN} ;"
 
 
 #define CONFIG_ROOTPATH         /tftpboot/rootfs_arm
