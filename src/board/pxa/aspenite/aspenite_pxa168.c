@@ -81,7 +81,7 @@ static mfp_cfg_t aspenite_mfp_cfg[] __initdata = {
 	MFP_CFG(GPIO98, AF2),
 	MFP_CFG(GPIO99, AF2),
 
-#if !defined(CHUMBY_CONFIG_platform)
+#if !defined(KOVAN_CONFIG_platform)
 	/* FFUART */
 	GPIO108_FFRXD,
 	GPIO107_FFTXD,
@@ -318,7 +318,7 @@ int cpu_is_aspen_s0(void)
 	}
 }
 
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 
 void print_dramconfig_boot(int print) {
   int i;
@@ -529,7 +529,7 @@ int board_init (void)
 	*(volatile unsigned int *)0xd401e0f0 = *(volatile unsigned int *)0xd401e0f0 | 0xC00; /* VDD_IO0 = VDD_IO1 = 3.3V*/
 	*(unsigned int *)0xd401e0f4 = *(volatile unsigned int *)0xd401e0f4 | 0xC00; /* VDD_IO2 = VDD_IO3 = 3.3V */
 	*(unsigned int *)0xd401e0f8 = *(volatile unsigned int *)0xd401e0f8 | 0x800; /* VDD_IO4 = 3.3V */
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 	_aspen_a0_detected = 1;
 #endif
     }
@@ -537,7 +537,7 @@ int board_init (void)
 	*(volatile unsigned int *)0xd401e0f0 = *(volatile unsigned int *)0xd401e0f0 & ~(0xC00); /* VDD_IO0 = VDD_IO1 = 3.3V*/
         *(unsigned int *)0xd401e0f4 = *(volatile unsigned int *)0xd401e0f4 & ~(0xC00); /* VDD_IO2 = VDD_IO3 = 3.3V */
         *(unsigned int *)0xd401e0f8 = *(volatile unsigned int *)0xd401e0f8 & ~(0x800); /* VDD_IO4 = 3.3V */
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 	_aspen_a0_detected = 0;
 #endif
     }
@@ -548,8 +548,8 @@ int board_init (void)
 
 	// Marvell CPUID is needed for cpu_is_pxa168() to work properly
 	// but causes xdb3.3 to not work
-#if defined(CHUMBY_CONFIGNAME_silvermoon_a0) || !defined(CHUMBY_CONFIG_platform)
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIGNAME_silvermoon_a0) || !defined(KOVAN_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 	_mohawk_cpu_conf_before = *(volatile unsigned int *)0xD4282c08;
 	__asm__ __volatile__ ("mrc        p15, 0, %0, c0, c0, 0"
                     : "=r" (_arm_cpuid_before)
@@ -558,7 +558,7 @@ int board_init (void)
 #endif
     /* set SEL_MRVL_ID bit in MOHAWK_CPU_CONF register - Ning */
     *(volatile unsigned int *)0xD4282c08 = *(volatile unsigned int *)0xD4282c08 | 0x100;
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 	_mohawk_cpu_conf_after = *(volatile unsigned int *)0xD4282c08;
 	__asm__ __volatile__ ("mrc        p15, 0, %0, c0, c0, 0"
                     : "=r" (_arm_cpuid_after)
@@ -619,7 +619,7 @@ int board_init (void)
     gd->bd->bi_dram[0].start = PHYS_SDRAM_1;
     gd->bd->bi_dram[0].size  = initdram(0);
 
-#ifdef CHUMBY_CONFIG_platform
+#ifdef KOVAN_CONFIG_platform
     /* arch number of Chumby Silvermoon board */
     gd->bd->bi_arch_number = 1829;  // MACH_ASPENITE
     //gd->bd->bi_arch_number = 2222;  // MACH_CHUMBY_SILVERMOON
@@ -640,21 +640,21 @@ int board_init (void)
     gd->baudrate = CONFIG_BAUDRATE;
     icache_enable ();
 
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
     /* configure for MFP */
     pxa3xx_init_mfp();
     pxa3xx_mfp_init_addr(pxa910_168_mfp_addr_map);
     pxa3xx_mfp_config(ARRAY_AND_SIZE(aspenite_mfp_cfg));
 #endif
 
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 	//ensure that UART1 input is working...
 	//set Pin Direction Set regster (GPIO_SDR) for GPIO109 to Output 
 	*(unsigned int *)0xd4019154 =  (1 << (109-96));
 #endif
 
 
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 	/* Disable USB card.  Will be re-enabled by kernel */
 	{
 		/* GPIO4_PCR: Clear GPIO 101 and set it low */
@@ -770,37 +770,8 @@ int checkboard (void)
 int display_marvell_banner (void)
 {
    printf("\n");
-#if defined(CHUMBY_CONFIG_platform)
-	// Via http://www.glassgiant.com/ascii/ 120 columns then cut out text
-printf("                .:+I$ZOOOZZZZOO~       \n");
-printf("             .7OZZZZZZZZZZZZZZZZ?      \n");
-printf("            ,ZZZZZZZZZZZZZZZZZZZO      \n");
-printf("            ZZZZZZ?ZZZZZZOI$ZZZZO.     \n");
-printf("           .OZZZ=?OI~ZZZO Z~?ZZZO.     \n");
-printf("            ZZZZ~7O7:OZZO~  ZZZZO      \n");
-printf("            IZZZZOOOZZZZZZZZZZZZ$      \n");
-printf("            =ZZZZZZZZZZZZZZZZZZZI      \n");
-printf("            IZZZZZZZZZZZZZZZZZZZI      \n");
-printf("     :IZOOZZZZZZZZZZZZZZZZZZZZZZZZ,    \n");
-printf("  ,ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ   \n");
-printf(".Z$$7?~,..~OZZZZZZZZZZZZZZZZZ7 =ZZZZO, \n");
-printf("         IZZZZ$,OZZZZZZZO+ZZZO.  ,ZZZO \n");
-printf("        ZZZZ~ ~ZZZZ ?ZZZ~ ?ZZZZ     .=+\n");
-printf("       ,ZZO  .OZZZ  ZZZO   OZZZ        \n");
-printf("       :Z$   IZZZ, .OZZZ   .OZZ.       \n");
-printf("       .~    ZZO.  .OZZ+     $Z        \n");
-printf("             Z+     $ZZ                \n");
-printf("                    .?                 \n");
-
-	// From http://www.network-science.de/ascii/ (font=larry3d)
-printf("     /\\ \\                        /\\ \\                 \n");
-printf("  ___\\ \\ \\___   __  __    ___ ___\\ \\ \\____  __  __    \n");
-printf(" /'___\\ \\  _ `\\/\\ \\/\\ \\ /' __` __`\\ \\ '__`\\/\\ \\/\\ \\   \n");
-printf("/\\ \\__/\\ \\ \\ \\ \\ \\ \\_\\ \\/\\ \\/\\ \\/\\ \\ \\ \\L\\ \\ \\ \\_\\ \\  \n");
-printf("\\ \\____\\\\ \\_\\ \\_\\ \\____/\\ \\_\\ \\_\\ \\_\\ \\_,__/\\/`____ \\ \n");
-printf(" \\/____/ \\/_/\\/_/\\/___/  \\/_/\\/_/\\/_/\\/___/  `/___/> \\\n");
-printf("                                                /\\___/\n");
-printf("[%-40s]      \\/__/ ", CHUMBY_CONFIG_name );
+#if defined(KOVAN_CONFIG_platform)
+   printf("Kovan U-boot environment\n");
 #else
    printf(" __  __                      _ _\n");
    printf("|  \\/  | __ _ _ ____   _____| | |\n");
@@ -815,12 +786,6 @@ printf("[%-40s]      \\/__/ ", CHUMBY_CONFIG_name );
 #endif
    printf("\n\nMARVELL PXAXXX series.");
    printf("\nBased on 88SV331xV5 Core with ARM926 LE CPU.");
-#if defined(CHUMBY_CONFIG_platform)
-	printf( "\nStepping %s CPU conf %x->%x ARM CPUID %x->%x",
-		_aspen_a0_detected == 1 ? "A0" : "pre-A0",
-		_mohawk_cpu_conf_before, _mohawk_cpu_conf_after,
-		_arm_cpuid_before, _arm_cpuid_after );
-#endif
    printf("\nCode original base is u-boot-arm 2009.01-rc1.\n\n");
 
 #if DDR_HACK

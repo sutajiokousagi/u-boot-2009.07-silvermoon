@@ -75,7 +75,7 @@ static struct pxa3xx_nand_timing samsung8GbX8_timing = {
 	.tAR = 10,
 };
 
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 // Added for HY27UF082G2A-TP 2gbit NAND - being phased out from Silvermoon in favor of eSD
 static struct pxa3xx_nand_timing hynix2GbX8_timing = {
 	.tCH = 10,
@@ -175,7 +175,7 @@ static struct pxa3xx_nand_flash samsung8GbX8 = {
 	.ecc_type	= ECC_BCH,
 };
 
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 // Was defined in drivers/mtd/nand/pxa3xx_nand.c as follows:
 #if 0
 	.enable_arbiter = 1,	/* Data flash bus arbiter enable */
@@ -291,7 +291,7 @@ static struct pxa3xx_nand_flash stm2GbX16 = {
 
 static struct pxa3xx_nand_flash *builtin_flash_types[] = {
 	&nand_common,
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 	&hynix2GbX8,
 #endif
 	&samsung512MbX16,

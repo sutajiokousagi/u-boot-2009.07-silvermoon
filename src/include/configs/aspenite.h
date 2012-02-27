@@ -29,7 +29,7 @@
 #define CONFIG_IDENT_STRING         "\nMarvell version: 1.1.1.1 PXAxxx"
 
 #define CONFIG_SYS_HUSH_PARSER
-#define CONFIG_SYS_PROMPT_HUSH_PS2 "chumby> "
+#define CONFIG_SYS_PROMPT_HUSH_PS2 "kovan> "
 
 // Enable various nice commands.
 #define CONFIG_CMD_MISC
@@ -80,7 +80,7 @@
 #define CONFIG_PXAXXX           1 /*  pxa family */
 #define CONFIG_ASPENITE         1
 
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 #define CONFIG_SYS_BOARD_NAME       "88SV331xV5 based Silvermoon"
 #define CONFIG_SYS_VENDOR_NAME      "Chumby"
 #else
@@ -121,7 +121,7 @@
 #define CONFIG_SHOW_BOOT_PROGRESS
 
 /*
-#if !defined(CHUMBY_CONFIG_platform)
+#if !defined(KOVAN_CONFIG_platform)
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_NET
 #define CONFIG_NET_MULTI
@@ -132,7 +132,7 @@
 #define CONFIG_SERVERIP         192.168.1.100
 
 #define CONFIG_ETHADDR          "00:00:5A:9F:6D:82"
-#endif // !CHUMBY_CONFIG_platform
+#endif // !KOVAN_CONFIG_platform
 */
 
 /* enable passing of ATAGs  */
@@ -161,7 +161,7 @@
 /*-----------------------------------------------------------------------
  * MMC configuration
  */
-#if !defined(CHUMBY_CONFIG_platform)
+#if !defined(KOVAN_CONFIG_platform)
 #define CFG_CMD_FAT     1
 #define CONFIG_CMD_FAT      1
 #endif
@@ -233,6 +233,9 @@
     " ;"                                                        \
     "echo \"Booting to regular mode...\" ;"                     \
     " ;"                                                        \
+    /* Set the CPU ID to allow Linux to recognize the CPU */    \
+    "setid ;"                                                   \
+    " ;"                                                        \
     /* Set up the Linux command line */                         \
     "setenv bootargs root=/dev/mmcblk0p2 "                      \
             "rootwait console=ttyS0,115200 mem=128M "           \
@@ -262,8 +265,8 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP         /* undef to save memory     */
-#if defined(CHUMBY_CONFIG_name)
-#define CONFIG_SYS_PROMPT           CHUMBY_CONFIG_name ">> "   /* Monitor Command Prompt   */
+#if defined(KOVAN_CONFIG_name)
+#define CONFIG_SYS_PROMPT           KOVAN_CONFIG_name ">> "   /* Monitor Command Prompt   */
 #else
 #define CONFIG_SYS_PROMPT           "Aspenite>> "   /* Monitor Command Prompt   */
 #endif
@@ -300,9 +303,9 @@
  */
 #define CONFIG_NR_DRAM_BANKS        1   /* we have 1 bank of DRAM */
 #define PHYS_SDRAM_1                0x00000000   /* SDRAM Bank #1 */
-#if defined(CHUMBY_CONFIG_memsize)
-#define PHYS_SDRAM_1_SIZE           (CHUMBY_CONFIG_memsize * 0x100000)  /* 128 MB */
-#define PHYS_SDRAM_SIZE_DEC         CHUMBY_CONFIG_memsize
+#if defined(KOVAN_CONFIG_memsize)
+#define PHYS_SDRAM_1_SIZE           (KOVAN_CONFIG_memsize * 0x100000)  /* 128 MB */
+#define PHYS_SDRAM_SIZE_DEC         KOVAN_CONFIG_memsize
 #else
 #define PHYS_SDRAM_1_SIZE           0x04000000   /* 64 MB */
 #define PHYS_SDRAM_SIZE_DEC         64

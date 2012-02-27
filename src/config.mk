@@ -206,7 +206,7 @@ export	TEXT_BASE PLATFORM_CPPFLAGS PLATFORM_RELFLAGS CPPFLAGS CFLAGS AFLAGS
 
 #########################################################################
 
-CFLAGS += -DCHUMBY_CONFIG_platform=\"silvermoon\" -DCHUMBY_CONFIG_name=\"netv\" -DCHUMBY_CNPLATFORM_silvermoon -DCHUMBY_CONFIG_silvermoon
+CFLAGS += -DKOVAN_CONFIG_platform=\"silvermoon\" -DKOVAN_CONFIG_name=\"netv\" -DCHUMBY_CNPLATFORM_silvermoon -DKOVAN_CONFIG_silvermoon
 
 ifndef REMOTE_BUILD
 

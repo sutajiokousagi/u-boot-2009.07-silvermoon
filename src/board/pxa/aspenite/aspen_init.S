@@ -520,7 +520,7 @@ xlli_MFPR_data:
         .hword     NO_UPDATE       @ GPIO_99  -
         .hword     NO_UPDATE       @ GPIO_100 -
         .hword     NO_UPDATE       @ GPIO_101 -
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
         .hword     PULL_UP_DRV_FAST_AF3		       @ GPIO_102 - SSP4_CLK
         .hword     PULL_UP_DRV_FAST_AF3		       @ GPIO_103 - SSP4_FRM
         .hword     PULL_UP_DRV_FAST_AF4		       @ GPIO_104 - SSP4_TXD
@@ -531,7 +531,7 @@ xlli_MFPR_data:
 #endif
         .hword     DRV_SLOW__EDGE_DISABLED__AF1                @ GPIO_105 - I2C_SDA
         .hword     DRV_SLOW__EDGE_DISABLED__AF1                @ GPIO_106 - I2C_SCL
-#if defined(CHUMBY_CONFIG_platform)
+#if defined(KOVAN_CONFIG_platform)
 		.hword     PULL_UP__DRV_FAST__EDGE_DISABLED__AF1     @ GPIO_107 - FFUART_RXD DEBUG PORT
 		.hword     PULL_UP__DRV_FAST__EDGE_DISABLED__AF1     @ GPIO_108 - FFUART_TXD DEBUG PORT
 #else

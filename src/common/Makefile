@@ -45,7 +45,7 @@ COBJS-y += xyzModem.o
 endif
 
 # core command
-ifneq (${CHUMBY_CONFIG_platform},)
+ifneq (${KOVAN_CONFIG_platform},)
 COBJS-y += cmd_boot.o
 endif
 COBJS-y += cmd_nvedit.o
