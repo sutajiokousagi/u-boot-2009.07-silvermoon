@@ -82,7 +82,7 @@
 
 #if defined(KOVAN_CONFIG_platform)
 #define CONFIG_SYS_BOARD_NAME       "88SV331xV5 based Silvermoon"
-#define CONFIG_SYS_VENDOR_NAME      "Chumby"
+#define CONFIG_SYS_VENDOR_NAME      "Kosagi"
 #else
 #define CONFIG_SYS_BOARD_NAME       "88SV331xV5 based PXAxxx"
 #define CONFIG_SYS_VENDOR_NAME      "MARVELL"
@@ -223,7 +223,7 @@
     "        cconfigload mmc 0 ${default_load_addr} krnB ;"     \
     "        bootz ${default_load_addr} ; fi; "                 \
     "    else "                                                 \
-    "        echo \"Chumby shell\"; "                           \
+    "        echo \"Kovan shell\"; "                            \
     "        echo \"Type 'run bootcmd' to exit\"; "             \
     "        exit ;"                                            \
     "    fi; "                                                  \
@@ -240,7 +240,7 @@
     "setenv bootargs root=/dev/mmcblk0p2 "                      \
             "rootwait console=ttyS0,115200 mem=128M "           \
             "uart_dma sysrq_always_enabled "                    \
-            "rootfstype=ext3 rw ;"                              \
+            "rootfstype=ext4 rw ;"                              \
     " ;"                                                        \
     /* Load the kernel from the config area */                  \
     "cconfigload mmc 0 ${default_load_addr} krnA;"              \
