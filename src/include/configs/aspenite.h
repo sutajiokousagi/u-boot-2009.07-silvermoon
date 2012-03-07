@@ -240,7 +240,7 @@
     "setenv bootargs root=/dev/mmcblk0p2 "                      \
             "rootwait console=ttyS0,115200 mem=128M "           \
             "uart_dma sysrq_always_enabled "                    \
-            "rootfstype=ext4 rw ;"                              \
+            "consoleblank=0 rootfstype=ext4 rw ;"               \
     " ;"                                                        \
     /* Load the kernel from the config area */                  \
     "cconfigload mmc 0 ${default_load_addr} krnA;"              \
