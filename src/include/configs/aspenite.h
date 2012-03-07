@@ -201,6 +201,9 @@
     /* Init SD card */                                          \
     "mmc rescan ;"                                              \
     " ;"                                                        \
+    /* Set the CPU ID to allow Linux to recognize the CPU */    \
+    "setid ;"                                                   \
+    " ;"                                                        \
     /* Have a pretty, flashy startup screen */                  \
     /* Draw an image to the screen */                           \
     "echo \"Drawing something to the screen...\" ;"             \
@@ -232,9 +235,6 @@
     "fi; "                                                      \
     " ;"                                                        \
     "echo \"Booting to regular mode...\" ;"                     \
-    " ;"                                                        \
-    /* Set the CPU ID to allow Linux to recognize the CPU */    \
-    "setid ;"                                                   \
     " ;"                                                        \
     /* Set up the Linux command line */                         \
     "setenv bootargs root=/dev/mmcblk0p2 "                      \
