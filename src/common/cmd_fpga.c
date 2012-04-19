@@ -544,10 +544,14 @@ static int do_fpga_type (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 	jtag_open(&state);
 	idcode = jtag_idcode(&state);
 
-	if (idcode == 0x24001093)
+	if (idcode == 0x24001093) {
 		setenv("FPGA_TYPE", "LX9");
-	else if (idcode == 0x34008093)
+		setenv("FPGA_SIZE", "340701");
+	}
+	else if (idcode == 0x34008093) {
 		setenv("FPGA_TYPE", "LX45");
+		setenv("FPGA_SIZE", "1484502");
+	}
 	else {
 		printf("Unknown FPGA ID code: 0x%08x\n", idcode);
 		setenv("FPGA_TYPE", "unknown");
