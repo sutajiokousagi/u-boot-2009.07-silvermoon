@@ -201,6 +201,7 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
   Xilinx_Spartan6_Slave_Serial_fns *fn = desc->iface_fns;
   int i;
   unsigned char val;
+  unsigned char *buf_c = buf;
 
   size_t bytecount = 0;
   unsigned char *data = (unsigned char *) buf;
@@ -209,6 +210,15 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
   unsigned long ssp_word = 0;
   unsigned int temp;
   int error = 0;
+
+  /* Strip off the header, if it's present */
+  if (buf_c[0] == 0x00 && buf_c[1] == 0x09
+   && buf_c[2] == 0x0f && buf_c[3] == 0xf0
+   && buf_c[4] == 0x0f && buf_c[5] == 0xf0
+   && buf_c[6] == 0x0f && buf_c[7] == 0xf0) {
+    buf += 0x61;
+    bsize -= 0x61;
+  }
 
   if( !fn ) {
     printf ("%s: NULL Interface function table!\n", __FUNCTION__);
