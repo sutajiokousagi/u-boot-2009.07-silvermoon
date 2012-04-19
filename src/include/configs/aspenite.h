@@ -211,7 +211,8 @@
     " ;"                                                        \
     /* Load the FPGA, which lets us draw to the screen */       \
     "echo \"Loading FPGA configuration.\" ;"                    \
-    "cconfigload mmc 0:2 ${default_load_addr} 720p ;"           \
+    "fpga_type ;"                                               \
+    "cconfigload mmc 0:2 ${default_load_addr} ${FPGA_TYPE} ;"   \
     "fpga load 0 ${default_load_addr} 340604 ; "                \
     " ;"                                                        \
     "echo \"Loading boot logo.\" ;"                             \
