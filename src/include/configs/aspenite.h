@@ -213,7 +213,7 @@
     "echo \"Loading FPGA configuration.\" ;"                    \
     "fpga_type ;"                                               \
     "cconfigload mmc 0:2 ${default_load_addr} ${FPGA_TYPE} ;"   \
-    "fpga load 0 ${default_load_addr} 340604 ; "                \
+    "fpga loadb 0 ${default_load_addr} ${FPGA_SIZE} ; "         \
     " ;"                                                        \
     "echo \"Loading boot logo.\" ;"                             \
     "cconfigload mmc 0:2 ${default_load_addr} logo ;"           \
