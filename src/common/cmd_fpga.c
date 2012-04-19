@@ -32,6 +32,7 @@
 #endif
 #include <fpga.h>
 #include <malloc.h>
+#include <asm/arch/common.h>
 
 #if 0
 #define	FPGA_DEBUG
@@ -363,4 +364,200 @@ U_BOOT_CMD (fpga, 6, 1, do_fpga,
 	    "\tFor loadmk operating on FIT format uImage address must include\n"
 	    "\tsubimage unit name in the form of addr:<subimg_uname>\n"
 #endif
+);
+
+
+
+
+#define TDO_GPIO 16
+#define TMS_GPIO 18
+#define TCK_GPIO 20
+#define TDI_GPIO 34
+
+#define GPIO_PATH "/sys/class/gpio"
+#define EXPORT_PATH GPIO_PATH "/export"
+#define UNEXPORT_PATH GPIO_PATH "/unexport"
+
+struct jtag_state {
+	int tdi;
+	int tms;
+	int tck;
+	int tdo;
+};
+
+static unsigned long mfp_phys_base = 0xD401E000;
+static unsigned long gpio_phys_base = 0xD4019000;
+static unsigned long gpio_plr = 0x00;
+static unsigned long gpio_psr = 0x18;
+static unsigned long gpio_pcr = 0x24;
+static unsigned long gpio_sdr = 0x54;
+static unsigned long gpio_cdr = 0x60;
+
+static int gpio_bases[] = {
+	0x0000,
+	0x0004,
+	0x0008,
+	0x0100,
+};
+
+static int gpio_export(int pin) {
+	unsigned long mfp;
+
+	/* MFP pins have this weird discontinuity between MFP and offset */
+	if (pin >= 37 && pin <= 55)
+		pin -= 37;
+	else
+		pin += 19;
+	mfp = mfp_phys_base + pin*4;
+	__raw_writel(0x880, mfp);;
+
+	return 0;
+}
+
+static int gpio_get_value(int pin) {
+	unsigned long gpio = gpio_phys_base + gpio_bases[pin>>5];
+	return !!(__raw_readl(gpio)&(1<<(pin&0x1f)));
+}
+
+static int gpio_set_value(int pin, int value) {
+	unsigned long gpio = gpio_phys_base + gpio_bases[pin>>5];
+	if (value)
+		gpio += gpio_psr;
+	else
+		gpio += gpio_pcr;
+	__raw_writel(1<<(pin&0x1f), gpio);
+
+	return 0;
+}
+
+static int gpio_set_direction(int pin, int is_output) {
+	unsigned long gpio = gpio_phys_base + gpio_bases[pin>>5];
+
+	if (is_output)
+		gpio += gpio_sdr;
+	else
+		gpio += gpio_cdr;
+
+	__raw_writel(1<<(pin&0x1f), gpio);
+
+	return 0;
+}
+
+
+/* Wiggle the TCK like, moving JTAG one step further along its state machine */
+static int jtag_tick(struct jtag_state *state) {
+	gpio_set_value(state->tck, 0);
+	udelay(100);
+	gpio_set_value(state->tck, 1);
+	udelay(100);
+	gpio_set_value(state->tck, 0);
+	udelay(100);
+	return 0;
+}
+
+
+/* Send five 1s through JTAG, which will bring it into reset state */
+static int jtag_reset(struct jtag_state *state) {
+	int i;
+	for (i=0; i<5; i++) {
+		gpio_set_value(state->tms, 1);
+		jtag_tick(state);
+	}
+
+	return 0;
+}
+
+
+static int jtag_open(struct jtag_state *state) {
+
+	gpio_export(TDI_GPIO);
+	gpio_export(TMS_GPIO);
+	gpio_export(TCK_GPIO);
+	gpio_export(TDO_GPIO);
+
+	gpio_set_direction(TDI_GPIO, 0);
+	gpio_set_direction(TMS_GPIO, 1);
+	gpio_set_direction(TCK_GPIO, 1);
+	gpio_set_direction(TDO_GPIO, 1);
+
+	gpio_set_value(TDO_GPIO, 0);
+	gpio_set_value(TMS_GPIO, 0);
+	gpio_set_value(TCK_GPIO, 0);
+
+	state->tdi = TDI_GPIO;
+	state->tms = TMS_GPIO;
+	state->tck = TCK_GPIO;
+	state->tdo = TDO_GPIO;
+
+	jtag_reset(state);
+
+	return 0;
+}
+
+/* Reads the ID CODE out of the FPGA
+ * When the state machine is reset, the sequence 0, 1, 0, 0 will move
+ * it to a point where continually reading the TDO line will yield the
+ * ID code.
+ *
+ * This is because by default, the reset command loads the chip's ID
+ * into the data register, so all we have to do is read it out.
+ */
+static int jtag_idcode(struct jtag_state *state) {
+	int i;
+	int val = 0;
+
+	/* Reset the state machine */
+	jtag_reset(state);
+
+	/* Get into "Run-Test/ Idle" state */
+	gpio_set_value(state->tms, 0);
+	jtag_tick(state);
+
+	/* Get into "Select DR-Scan" state */
+	gpio_set_value(state->tms, 1);
+	jtag_tick(state);
+
+	/* Get into "Capture DR" state */
+	gpio_set_value(state->tms, 0);
+	jtag_tick(state);
+
+	/* Get into "Shift-DR" state */
+	gpio_set_value(state->tms, 0);
+	jtag_tick(state);
+
+	/* Read the code out */
+	for (i=0; i<32; i++) {
+		int ret = gpio_get_value(state->tdi);
+		val |= (ret<<i);
+		jtag_tick(state);
+	}
+
+	return val;
+}
+
+
+static int do_fpga_type (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+{
+	struct jtag_state state;
+	int idcode;
+
+	jtag_open(&state);
+	idcode = jtag_idcode(&state);
+
+	if (idcode == 0x24001093)
+		setenv("FPGA_TYPE", "LX9");
+	else if (idcode == 0x34008093)
+		setenv("FPGA_TYPE", "LX45");
+	else {
+		printf("Unknown FPGA ID code: 0x%08x\n", idcode);
+		setenv("FPGA_TYPE", "unknown");
+	}
+	printf("FPGA type: %s\n", getenv("FPGA_TYPE"));
+	return 0;
+}
+
+
+U_BOOT_CMD (fpga_type, 1, 1, do_fpga_type,
+	"fpga_type	- Report FPGA type\n",
+	"Running \"fpga_type\" prints out FPGA type and sets $FPGA_TYPE\n"
 );
