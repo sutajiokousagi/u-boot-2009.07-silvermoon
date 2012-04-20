@@ -35,7 +35,7 @@ int lcd_color_bg;
 void *lcd_base;				/* Start of framebuffer memory	*/
 void *lcd_console_address;		/* Start of console buffer	*/
 
-vidinfo_t panel_info = { 1280, 720, LCD_COLOR16 };
+vidinfo_t panel_info = { 320, 240, LCD_COLOR16 };
 
 short console_col;
 short console_row;
@@ -87,23 +87,23 @@ void lcd_ctrl_init(void *lcdbase) {
 	{(volatile unsigned int *) 0xd420b0d4, 0x00000000}, // LCD_SPU_DMA_START_ADDR_U1
 	{(volatile unsigned int *) 0xd420b0d8, 0x00000000}, // LCD_SPU_DMA_START_ADDR_V1
 	{(volatile unsigned int *) 0xd420b0dc, 0x00000000}, // LCD_CFG_DMA_START_ADDR_1
-	{(volatile unsigned int *) 0xd420b0e0, 0x00000a00}, // LCD_SPU_DMA_PITCH_YC
+	{(volatile unsigned int *) 0xd420b0e0, 0x00000280}, // LCD_SPU_DMA_PITCH_YC
 	{(volatile unsigned int *) 0xd420b0e4, 0x00000000}, // LCD_SPU_DMA_PITCH_UV
 	{(volatile unsigned int *) 0xd420b0e8, 0x00000000}, // LCD_SPUT_DMA_OVSA_HPXL_VLN
-	{(volatile unsigned int *) 0xd420b0ec, 0x02d00500}, // LCD_SPU_DMA_HPXL_VLN
-	{(volatile unsigned int *) 0xd420b0f0, 0x02d00500}, // LCD_SPU_DZM_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b0ec, 0x00f00140}, // LCD_SPU_DMA_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b0f0, 0x00f00140}, // LCD_SPU_DZM_HPXL_VLN
 	{(volatile unsigned int *) 0xd420b0f4, (unsigned long)lcdbase}, // LCD_CFG_GRA_START_ADDR0
 	{(volatile unsigned int *) 0xd420b0f8, (unsigned long)lcdbase}, // LCD_CFG_GRA_START_ADDR1
-	{(volatile unsigned int *) 0xd420b0fc, 0x00000640}, // LCD_CFG_GRA_PITCH
+	{(volatile unsigned int *) 0xd420b0fc, 0x00000280}, // LCD_CFG_GRA_PITCH
 	{(volatile unsigned int *) 0xd420b100, 0x00000000}, // LCD_SPU_GRA_OVSA_HPXL_VLN
-	{(volatile unsigned int *) 0xd420b104, 0x02580320}, // LCD_SPU_GRA_HPXL_VLN
-	{(volatile unsigned int *) 0xd420b108, 0x02580320}, // LCD_SPU_GZM_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b104, 0x00f00140}, // LCD_SPU_GRA_HPXL_VLN
+	{(volatile unsigned int *) 0xd420b108, 0x00f00140}, // LCD_SPU_GZM_HPXL_VLN
 	{(volatile unsigned int *) 0xd420b10c, 0x00000000}, // LCD_SPU_HWC_OVSA_HPXL_VLN
 	{(volatile unsigned int *) 0xd420b110, 0x00000000}, // LCD_SPU_HWC_HPXL_VLN
-	{(volatile unsigned int *) 0xd420b114, 0x02ee0672}, // LCD_SPUT_V_H_TOTAL
-	{(volatile unsigned int *) 0xd420b118, 0x02d00500}, // LCD_SPU_V_H_ACTIVE
-	{(volatile unsigned int *) 0xd420b11c, 0x006e00dc}, // LCD_SPU_H_PORCH
-	{(volatile unsigned int *) 0xd420b120, 0x00050014}, // LCD_SPU_V_PORCH
+	{(volatile unsigned int *) 0xd420b114, 0x01060198}, // LCD_SPUT_V_H_TOTAL
+	{(volatile unsigned int *) 0xd420b118, 0x00f00140}, // LCD_SPU_V_H_ACTIVE
+	{(volatile unsigned int *) 0xd420b11c, 0x00260014}, // LCD_SPU_H_PORCH
+	{(volatile unsigned int *) 0xd420b120, 0x000f0004}, // LCD_SPU_V_PORCH
 	{(volatile unsigned int *) 0xd420b124, 0x00000000}, // LCD_SPU_BLANKCOLOR
 	{(volatile unsigned int *) 0xd420b128, 0x00000000}, // LCD_SPU_ALPHA_COLOR1
 	{(volatile unsigned int *) 0xd420b12c, 0x00000000}, // LCD_SPU_ALPHA_COLOR2
@@ -113,8 +113,8 @@ void lcd_ctrl_init(void *lcdbase) {
 	{(volatile unsigned int *) 0xd420b190, 0x08040011}, // LCD_SPU_DMA_CTRL0
 	{(volatile unsigned int *) 0xd420b194, 0xa001ff81}, // LCD_SPU_DMA_CTRL1
 	{(volatile unsigned int *) 0xd420b1a8, 0x90000001}, // LCD_CFG_SCLK_DIV
-	{(volatile unsigned int *) 0xd420b1b8, 0x210ff003}, // LCD_SPU_DUMB_CTRL
-	{(volatile unsigned int *) 0xd420b1c8, 0x00000004}, // LCD_MISC_CNTL
+	{(volatile unsigned int *) 0xd420b1b8, 0x210ff011}, // LCD_SPU_DUMB_CTRL
+	{(volatile unsigned int *) 0xd420b1c8, 0x00000005}, // LCD_MISC_CNTL
 
 
 	/* Enable power to LCD Panel. Set GPIO 84 as output */
@@ -126,7 +126,7 @@ void lcd_ctrl_init(void *lcdbase) {
 		   (unsigned int)lcdbase,
 		   sizeof(register_values)/sizeof(*register_values));
 
-	memset(lcdbase, 0, 1280*720*2);
+	memset(lcdbase, 0, 320*240*2);
 
 	/* Initialize the LCD Controller according to the known-good
 	 * values taken directly from Linux
