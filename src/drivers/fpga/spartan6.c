@@ -198,13 +198,14 @@ int Spartan6_reloc (Xilinx_desc * desc, ulong reloc_offset)
 
 static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
   int ret_val = FPGA_FAIL;	/* assume the worst */
+  char buf_aligned[(bsize&~4)+4];
   Xilinx_Spartan6_Slave_Serial_fns *fn = desc->iface_fns;
   int i;
   unsigned char val;
   unsigned char *buf_c = buf;
 
   size_t bytecount = 0;
-  unsigned char *data = (unsigned char *) buf;
+  unsigned char *data;
   int cookie = desc->cookie;	/* make a local copy */
   unsigned long ts;		/* timestamp */
   unsigned long ssp_word = 0;
@@ -212,6 +213,7 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
   int error = 0;
 
   /* Strip off the header, if it's present */
+/*
   if (buf_c[0] == 0x00 && buf_c[1] == 0x09
    && buf_c[2] == 0x0f && buf_c[3] == 0xf0
    && buf_c[4] == 0x0f && buf_c[5] == 0xf0
@@ -219,11 +221,16 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
     buf += 0x61;
     bsize -= 0x61;
   }
+*/
 
   if( !fn ) {
     printf ("%s: NULL Interface function table!\n", __FUNCTION__);
     return ret_val;
   }
+
+  // Ensure the buffer is word-aligned.
+  memcpy(buf_aligned, buf, bsize);
+  data = buf_aligned;
     
   PRINTF ("%s: Function Table:\n"
 	  "ptr:\t0x%p\n"
@@ -235,8 +242,14 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
 	  "done:\t0x%p\n\n",
 	  __FUNCTION__, &fn, fn, fn->pgm, fn->init,
 	  fn->clk, fn->wr, fn->done);
+  if (bsize > 340992) {
+    printf("FPGA: Truncating impossibly large file.  Was: %d  Now: %d\n",
+           bsize, 340992);
+    bsize = 340992;
+  }
 #ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
-  printf ("Loading FPGA Device %d...\n", cookie);
+  printf ("Loading FPGA Device %d with %d bytes from %p...\n",
+          cookie, bsize, buf);
 #endif
   
   printf("SSP2 clock enable (26 MHz)\n");
