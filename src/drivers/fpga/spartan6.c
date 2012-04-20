@@ -212,17 +212,6 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
   unsigned int temp;
   int error = 0;
 
-  /* Strip off the header, if it's present */
-/*
-  if (buf_c[0] == 0x00 && buf_c[1] == 0x09
-   && buf_c[2] == 0x0f && buf_c[3] == 0xf0
-   && buf_c[4] == 0x0f && buf_c[5] == 0xf0
-   && buf_c[6] == 0x0f && buf_c[7] == 0xf0) {
-    buf += 0x61;
-    bsize -= 0x61;
-  }
-*/
-
   if( !fn ) {
     printf ("%s: NULL Interface function table!\n", __FUNCTION__);
     return ret_val;
@@ -242,11 +231,6 @@ static int Spartan6_ssp_load( Xilinx_desc *desc, void *buf, size_t bsize) {
 	  "done:\t0x%p\n\n",
 	  __FUNCTION__, &fn, fn, fn->pgm, fn->init,
 	  fn->clk, fn->wr, fn->done);
-  if (bsize > 340992) {
-    printf("FPGA: Truncating impossibly large file.  Was: %d  Now: %d\n",
-           bsize, 340992);
-    bsize = 340992;
-  }
 #ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
   printf ("Loading FPGA Device %d with %d bytes from %p...\n",
           cookie, bsize, buf);
